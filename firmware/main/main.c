@@ -31,10 +31,8 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
 #if 0
-    ETH_init();
     ETH_start();
 #else
-    WIFI_init();
     WIFI_start();
 #endif
 }
