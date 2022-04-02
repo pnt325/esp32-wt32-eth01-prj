@@ -74,7 +74,7 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
     xSemaphoreGive(get_ip_notify);
 }
 
-void ETH_init()
+void ETH_start()
 {
     get_ip_notify = xSemaphoreCreateBinary();
 
@@ -116,10 +116,7 @@ void ETH_init()
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL));
 
     ESP_LOGI(TAG, "Init");
-}
 
-void ETH_start()
-{
     ESP_ERROR_CHECK(esp_eth_start(eth_handle));
     ESP_LOGI(TAG, "Start");
     ESP_LOGI(TAG, "Wait to get the IP");

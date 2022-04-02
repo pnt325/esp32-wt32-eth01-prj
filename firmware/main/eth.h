@@ -10,7 +10,6 @@
 
 #include <stdint.h>
 
-void ETH_init();
 void ETH_start();
 void ETH_stop();
 
