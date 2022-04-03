@@ -17,6 +17,7 @@
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "sdkconfig.h"
+#include "connect.h"
 
 #include "ping/ping_sock.h"
 
@@ -28,7 +29,9 @@ static const char *TAG = "ETH";
 
 //! ETH handle
 static esp_eth_handle_t eth_handle = NULL;
-static SemaphoreHandle_t get_ip_notify;
+// static SemaphoreHandle_t get_ip_notify;
+
+extern void CONNECT_evt(uint8_t status);
 
 static void eth_event_handler(void *arg, esp_event_base_t event_base,
                               int32_t event_id, void *event_data)
@@ -47,6 +50,7 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
         break;
     case ETHERNET_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "Ethernet Link Down");
+        CONNECT_evt(DISCONNECTED);
         break;
     case ETHERNET_EVENT_START:
         ESP_LOGI(TAG, "Ethernet Started");
@@ -71,13 +75,12 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "ETHMASK :" IPSTR, IP2STR(&ip_info->netmask));
     ESP_LOGI(TAG, "ETHGW   :" IPSTR, IP2STR(&ip_info->gw));
 
-    xSemaphoreGive(get_ip_notify);
+    CONNECT_evt(CONNECTED);
+    // xSemaphoreGive(get_ip_notify);
 }
 
 void ETH_start()
 {
-    get_ip_notify = xSemaphoreCreateBinary();
-
     gpio_config_t io_conf = {};
     io_conf.intr_type    = GPIO_INTR_DISABLE;
     io_conf.mode         = GPIO_MODE_OUTPUT;
@@ -86,7 +89,6 @@ void ETH_start()
     io_conf.pull_up_en = 0;
     gpio_config(&io_conf);
     gpio_set_level(ETH_EMAC_ESC_ENABLE_IO, 1);
-
     
     ESP_ERROR_CHECK(esp_netif_init());                //! Initialize TCP/IP network interface
     ESP_ERROR_CHECK(esp_event_loop_create_default()); //! Create default event loop that running in background
@@ -119,9 +121,6 @@ void ETH_start()
 
     ESP_ERROR_CHECK(esp_eth_start(eth_handle));
     ESP_LOGI(TAG, "Start");
-    ESP_LOGI(TAG, "Wait to get the IP");
-    // Wait for get the IP
-    xSemaphoreTake(get_ip_notify, portMAX_DELAY);
 }
 
 void ETH_stop()

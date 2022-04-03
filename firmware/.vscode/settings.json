@@ -14,6 +14,9 @@
     "idf.flashType": "UART",
     "files.associations": {
         "*.inc": "c",
-        "argtable3.h": "c"
+        "argtable3.h": "c",
+        "connect.h": "c",
+        "esp_log.h": "c",
+        "adc_channel.h": "c"
     }
 }

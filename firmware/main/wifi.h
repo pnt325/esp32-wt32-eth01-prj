@@ -8,7 +8,9 @@
 #ifndef _WIFI_H_
 #define _WIFI_H_
 
-void WIFI_start(void);
+#include <stdint.h>
+
+void WIFI_start(const char* ssid, const char* pswd);
 void WIFI_stop(void);
 
 #endif /*_WIFI_H_*/
