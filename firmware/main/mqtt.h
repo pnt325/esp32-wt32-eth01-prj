@@ -10,6 +10,9 @@
 
 #include <stdint.h>
 
-void MQTT_init(void);
+typedef void(*mqtt_event_cb_t)(uint8_t connect);
+
+void MQTT_init(mqtt_event_cb_t event);
+void MQTT_publish(uint8_t* topic, uint8_t* data, uint16_t len);
 
 #endif /*_MQTT_H_*/

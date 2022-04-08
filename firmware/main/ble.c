@@ -44,6 +44,8 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 #define GATTS_DEMO_CHAR_VAL_LEN_MAX 0x40
 #define PREPARE_BUF_MAX_SIZE 1024
 
+static uint8_t ca_file[2048];
+static uint8_t ca_write_index;
 static SemaphoreHandle_t send_block;
 static uint8_t ble_data[BLE_PTC_DATA_SIZE];
 static uint8_t char1_str[] = {0x11, 0x22, 0x33};
@@ -807,6 +809,39 @@ static void received_handle(uint8_t* data, uint8_t len)
         {
             ble_res_failure(pack.cmd);
         }
+        return;
+    }
+
+    // CA file
+    if(pack.cmd == BLE_CMD_MQTT_CA_BEGIN)
+    {
+        ca_write_index = 0;
+        memset(ca_file, 0x00, sizeof(ca_file));
+        ble_res_success(pack.cmd);
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_MQTT_CA_END])
+    {
+        if(UCFG_write_mqtt_ca(ca_file, ca_write_index + 1))
+        {
+            ble_res_success(pack.cmd);
+        }
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_MQTT_CA_DATA)
+    {
+        for(uint8_t i = 0; i < pack.len; i++)
+        {
+            ca_file[ca_write_index] = pack.data[i];
+            ca_write_index++;
+        }
+        ble_res_success(pack.cmd);
         return;
     }
 }   

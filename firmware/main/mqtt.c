@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
@@ -24,7 +26,11 @@
 
 static const char *TAG = "MQTTS_EXAMPLE";
 
+static SemaphoreHandle_t publish_block;
+sstaic mqtt_event_cb_t mqtt_event;
 
+static uint8_t mqtt_connect = 0;
+extern uint8_t ca_file[2048];
 #if CONFIG_BROKER_CERTIFICATE_OVERRIDDEN == 1
 static const uint8_t mqtt_eclipseprojects_io_pem_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
 #else
@@ -75,9 +81,19 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
         msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
         ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
+        mqtt_connect = 1;
+        if(mqtt_event)
+        {
+            mqtt_event(1);
+        }
         break;
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
+        mqtt_connect = 0;
+        if(mqtt_event)
+        {
+            mqtt_event(0);
+        }
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
@@ -112,6 +128,11 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         } else {
             ESP_LOGW(TAG, "Unknown error type: 0x%x", event->error_handle->error_type);
         }
+
+        if(mqtt_event)
+        {
+            mqtt_event(0);
+        }
         break;
     default:
         ESP_LOGI(TAG, "Other event id:%d", event->event_id);
@@ -123,7 +144,7 @@ static void mqtt_app_start(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
         .uri = CONFIG_BROKER_URI,
-        .cert_pem = (const char *)mqtt_eclipseprojects_io_pem_start,
+        .cert_pem = (const char *)ca_file,
     };
 
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
@@ -133,35 +154,30 @@ static void mqtt_app_start(void)
     esp_mqtt_client_start(client);
 }
 
-void app_main(void)
+void MQTT_init(mqtt_event_cb_t event)
 {
-    ESP_LOGI(TAG, "[APP] Startup..");
+    mqtt_event = event;
+
+    const esp_mqtt_client_config_t mqtt_cfg = {
+        .uri = CONFIG_BROKER_URI,
+        .cert_pem = (const char *)ca_file,
+    };
+
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
-    ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
-
-    esp_log_level_set("*", ESP_LOG_INFO);
-    esp_log_level_set("esp-tls", ESP_LOG_VERBOSE);
-    esp_log_level_set("MQTT_CLIENT", ESP_LOG_VERBOSE);
-    esp_log_level_set("MQTT_EXAMPLE", ESP_LOG_VERBOSE);
-    esp_log_level_set("TRANSPORT_BASE", ESP_LOG_VERBOSE);
-    esp_log_level_set("TRANSPORT", ESP_LOG_VERBOSE);
-    esp_log_level_set("OUTBOX", ESP_LOG_VERBOSE);
-
-    ESP_ERROR_CHECK(nvs_flash_init());
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
-     * Read "Establishing Wi-Fi or Ethernet Connection" section in
-     * examples/protocols/README.md for more information about this function.
-     */
-    ESP_ERROR_CHECK(example_connect());
-
-    mqtt_app_start();
+    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
+    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
+    esp_mqtt_client_start(client);
 }
 
-
-void MQTT_init(void)
+void MQTT_publish(uint8_t* topic, uint8_t* data, uint16_t len)
 {
+    if(mqtt_connect == 0 || topic == NULL || data ==NULL || len == 0)
+    {
+        return;
+    }
 
+    xSemaphoreTake(publish_block, portMAX_DELAY);
+    esp_mqtt_client_publish(client, topic, data, len, 0, 0);
+    xSemaphoreGive(publish_block);
 }
