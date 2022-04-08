@@ -109,7 +109,10 @@ static int16_t ntc_lookup(float r)
         }
     }
 
-    return NTC_TABLE_temp[i];
+    float per = (NTC_TABLE_res[i] - r)/(NTC_TABLE_res[i] - NTC_TABLE_res[i + 1]);
+    float temp = NTC_TABLE_temp[i] + per*(NTC_TABLE_temp[i + 1] - NTC_TABLE_temp[i]);
+    
+    return temp;
 }
 
 
