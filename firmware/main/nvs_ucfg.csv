@@ -10,4 +10,3 @@ work_hours,data,binary,0
 connection,data,u8,0
 temp_offset,data,i8,0
 temp_limit,data,u8,95
-detect_channels,data,binary,0

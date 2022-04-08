@@ -11,5 +11,6 @@
 #include <stdint.h>
 
 bool BLE_start(void);
+bool BLE_send_data(uint8_t cmd, uint8_t* data, uint8_t len);
 
 #endif /*_BLE_H_*/

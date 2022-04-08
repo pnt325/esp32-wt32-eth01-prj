@@ -11,6 +11,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "freertos/event_groups.h"
 #include "esp_system.h"
 #include "esp_log.h"
@@ -24,6 +25,9 @@
 #include "esp_gatt_common_api.h"
 
 #include "sdkconfig.h"
+#include "ble_ptc.h"
+#include "ble_data.h"
+#include "ucfg.h"
 
 #define GATTS_TAG "BLE"
 
@@ -40,6 +44,8 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 #define GATTS_DEMO_CHAR_VAL_LEN_MAX 0x40
 #define PREPARE_BUF_MAX_SIZE 1024
 
+static SemaphoreHandle_t send_block;
+static uint8_t ble_data[BLE_PTC_DATA_SIZE];
 static uint8_t char1_str[] = {0x11, 0x22, 0x33};
 static esp_gatt_char_prop_t a_property = 0;
 
@@ -150,11 +156,15 @@ static struct gatts_profile_inst gl_profile_tab[PROFILE_NUM] = {
 
 typedef struct
 {
-    uint8_t *prepare_buf;
+    uint8_t prepare_buf[PREPARE_BUF_MAX_SIZE];
     int prepare_len;
 } prepare_type_env_t;
 
 static prepare_type_env_t a_prepare_write_env;
+
+static void received_handle(uint8_t* data, uint8_t len);
+static bool ble_send(uint8_t* data, uint8_t len);
+static bool ble_send_data(uint8_t cmd, uint8_t* data, uint8_t len);
 
 void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param);
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param);
@@ -231,27 +241,27 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
     {
         if (param->write.is_prep)
         {
-            if (prepare_write_env->prepare_buf == NULL)
+            // if (prepare_write_env->prepare_buf == NULL)
+            // {
+            //     prepare_write_env->prepare_buf = (uint8_t *)malloc(PREPARE_BUF_MAX_SIZE * sizeof(uint8_t));
+            //     prepare_write_env->prepare_len = 0;
+            //     if (prepare_write_env->prepare_buf == NULL)
+            //     {
+            //         ESP_LOGE(GATTS_TAG, "Gatt_server prep no mem\n");
+            //         status = ESP_GATT_NO_RESOURCES;
+            //     }
+            // }
+            // else
+            // {
+            if (param->write.offset > PREPARE_BUF_MAX_SIZE)
             {
-                prepare_write_env->prepare_buf = (uint8_t *)malloc(PREPARE_BUF_MAX_SIZE * sizeof(uint8_t));
-                prepare_write_env->prepare_len = 0;
-                if (prepare_write_env->prepare_buf == NULL)
-                {
-                    ESP_LOGE(GATTS_TAG, "Gatt_server prep no mem\n");
-                    status = ESP_GATT_NO_RESOURCES;
-                }
+                status = ESP_GATT_INVALID_OFFSET;
             }
-            else
+            else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE)
             {
-                if (param->write.offset > PREPARE_BUF_MAX_SIZE)
-                {
-                    status = ESP_GATT_INVALID_OFFSET;
-                }
-                else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE)
-                {
-                    status = ESP_GATT_INVALID_ATTR_LEN;
-                }
+                status = ESP_GATT_INVALID_ATTR_LEN;
             }
+            // }
 
             esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)malloc(sizeof(esp_gatt_rsp_t));
             gatt_rsp->attr_value.len = param->write.len;
@@ -286,16 +296,17 @@ void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble
     if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC)
     {
         esp_log_buffer_hex(GATTS_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
+        received_handle(prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
     }
     else
     {
         ESP_LOGI(GATTS_TAG, "ESP_GATT_PREP_WRITE_CANCEL");
     }
-    if (prepare_write_env->prepare_buf)
-    {
-        free(prepare_write_env->prepare_buf);
-        prepare_write_env->prepare_buf = NULL;
-    }
+    // if (prepare_write_env->prepare_buf)
+    // {
+    //     free(prepare_write_env->prepare_buf);
+    //     prepare_write_env->prepare_buf = NULL;
+    // }
     prepare_write_env->prepare_len = 0;
 }
 
@@ -415,6 +426,8 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
             {
                 ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, user data, value len %d, value :", param->write.len);
                 esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
+
+                received_handle(param->write.value, param->write.len);
             }
         }
         example_write_event_env(gatts_if, &a_prepare_write_env, param);
@@ -571,6 +584,8 @@ bool BLE_start(void)
 {
     esp_err_t ret;
 
+    send_block = xSemaphoreCreateMutex();
+
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -629,4 +644,201 @@ bool BLE_start(void)
     return true;
 }
 
+bool BLE_send_data(uint8_t cmd, uint8_t* data, uint8_t len)
+{
+    return ble_send_data(cmd, data, len);
+}
+
+static void ble_res_success(uint8_t cmd)
+{
+    ble_send_data(BLE_CMD_ACK, &cmd, 1);
+}
+
+static void ble_res_failure(uint8_t cmd)
+{
+    ble_send_data(BLE_CMD_NACK, &cmd, 1);
+}
+
+static void received_handle(uint8_t* data, uint8_t len)
+{
+    ble_pack_t pack;
+    if(BLE_PTC_parse(data, len, &pack) == false){
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_WIFI_SSID)
+    {
+        if(UCFG_write_wifi_ssid(pack.data, pack.len))
+        {
+            ble_res_success(pack.cmd);
+        }
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_WIFI_PASSWORD)
+    {
+        if(UCFG_write_wifi_password(pack.data, pack.len))
+        {
+            ble_res_success(pack.cmd);
+        }
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
+
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_MQTT_PORT)
+    {
+        uint16_t* port = (uint16_t*)pack.data;
+        
+        if(pack.len < 2)
+        {
+            ESP_LOGE(GATTS_TAG, "CMD: %d, len: %d invalid", pack.cmd, pack.len);
+            ble_res_failure(pack.cmd);
+            return;
+        }
+
+        if(UCFG_write_mqtt_port(port[0]))
+        {
+            ble_res_success(pack.cmd);
+        }
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
+        
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_MQTT_HOST)
+    {
+        if(UCFG_write_mqtt_host(pack.data, pack.len))
+        {
+            ble_res_success(pack.cmd);
+        }
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_TEMP_OFFSET)
+    {
+        if(pack.len == 0){
+            ESP_LOGE(GATTS_TAG, "CMD: %d, len: %d invalid", pack.cmd, pack.len);
+            ble_res_failure(pack.cmd);
+            return;
+        }
+
+        if(UCFG_write_temp_offset(pack.data[0]))
+        {
+            ble_res_success(pack.cmd);
+        }
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
+
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_TEMP_LIMIT)
+    {
+        if(pack.len == 0){
+            ESP_LOGE(GATTS_TAG, "CMD: %d, len: %d invalid", pack.cmd, pack.len);
+            ble_res_failure(pack.cmd);
+            return;
+        }
+
+        if(UCFG_write_temp_limit(pack.data[0]))
+        {
+            ble_res_success(pack.cmd);
+        }
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
+
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_CONNECTION)
+    {
+        if(pack.len == 0){
+            ESP_LOGE(GATTS_TAG, "CMD: %d, len: %d invalid", pack.cmd, pack.len);
+            ble_res_failure(pack.cmd);
+            return;
+        }
+
+        if( pack.data[0] != CONNECTION_WIFI && 
+            pack.data[0] != CONNECTION_ETH)
+        {
+            ESP_LOGE(GATTS_TAG, "CMD: %d, data: %d invalid", pack.cmd, pack.len);
+            ble_res_failure(pack.cmd);
+            return;
+        }
+
+        if(UCFG_write_connection(pack.data[0]))
+        {
+            ble_res_success(pack.cmd);
+        }
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
+
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_CONFIG_COMMIT)
+    {
+        if(UCFG_save())
+        {
+            ble_res_success(pack.cmd);
+        }
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
+        return;
+    }
+}   
+
+static bool ble_send(uint8_t* data, uint8_t len)
+{
+    if(data == NULL || len == 0){
+        ESP_LOGE(GATTS_TAG, "ble_send param invalid");
+        return false;
+    }
+
+    esp_err_t err = esp_ble_gatts_send_indicate(gl_profile_tab[0].gatts_if, gl_profile_tab[0].conn_id, gl_profile_tab[0].char_handle, len, data, false);
+    if(err)
+    {
+        ESP_LOGE(GATTS_TAG, "Gatt send");
+        return false;
+    }
+
+    return true;
+}
+
+static bool ble_send_data(uint8_t cmd, uint8_t* data, uint8_t len)
+{
+    uint8_t buf_len = 0;
+    xSemaphoreTake(send_block, portMAX_DELAY);
+    if(BLE_PTC_package(cmd, data, len, ble_data, &buf_len))
+    {
+        ble_send(ble_data, len);
+        xSemaphoreGive(send_block);
+        return true;
+    }
+    xSemaphoreGive(send_block);
+    return false;
+}
 
