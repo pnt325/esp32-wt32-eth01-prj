@@ -11,6 +11,6 @@
 #include <stdint.h>
 
 void DI_init(void);
-uint8_t DI_status(void);
+uint8_t DI_status(uint8_t channel);
 
 #endif /*_DI_H_*/
