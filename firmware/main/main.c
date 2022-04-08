@@ -13,7 +13,9 @@
 #include "wifi.h"
 #include "ntc.h"
 #include "ble.h"
+#include "dio.h"
 #include "connect.h"
+#include "ucfg.h"
 
 #define TAG "MAIN"
 
@@ -27,8 +29,26 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    CONNECT_init();
-    ESP_LOGI(TAG, "Main connected");
+    // CONNECT_init();
+    // ESP_LOGI(TAG, "Main connected");
+
+// #define TEST_DI
+#ifdef TEST_DI
+  DIO_init();
+  DIO_test();
+#endif
+
+// #define TEST_NTC
+#ifdef TEST_NTC 
+  NTC_init(); 
+  NTC_Test();
+#endif
+
+#define TEST_UCFG
+#ifdef TEST_UCFG
+  UCFG_init();
+  UCFG_test();
+#endif 
 
 // #define NTC
 // #define BLE

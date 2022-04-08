@@ -16,6 +16,8 @@
 #include "ble_ptc.h"
 #include "esp_log.h"
 
+#define BLE_PTC_TAG "BLE_PTC"
+
 bool BLE_PTC_parse(const uint8_t* datas, uint8_t len, ble_pack_t* pack)
 {
     if(datas == NULL || pack == NULL){
@@ -33,7 +35,9 @@ bool BLE_PTC_parse(const uint8_t* datas, uint8_t len, ble_pack_t* pack)
     uint8_t sum = 0xff;
     sum += pack->cmd;
     sum += pack->len;
-    for(uint8_t i = 0; i < pack->len;i++)
+
+    int i;
+    for(i = 0; i < pack->len;i++)
     {
         pack->datas[i] = datas[i + 2];
         sum += datas[i + 2];
@@ -60,19 +64,19 @@ bool BLE_PTC_package(uint8_t cmd, const uint8_t* data, uint8_t len, uint8_t* out
     *out_len = 0;
     out_buf[*out_len] = cmd;
     sum += cmd;
-    out_len++;
+    *out_len = *out_len + 1;
     out_buf[*out_len] = len;
     sum += len;
-    out_len++;
+    *out_len = *out_len + 1;
     for(uint8_t i = 0; i < len; i++)
     {
         out_buf[*out_len] = data[i];
-        out_len++;
+        *out_len = *out_len + 1;
         sum += data[i];
     }
 
     out_buf[*out_len] = sum;
-    *out_len++;
+    *out_len = *out_len + 1;
 
     return true;
 }

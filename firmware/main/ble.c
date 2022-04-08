@@ -670,7 +670,7 @@ static void received_handle(uint8_t* data, uint8_t len)
 
     if(pack.cmd == BLE_CMD_WIFI_SSID)
     {
-        if(UCFG_write_wifi_ssid(pack.data, pack.len))
+        if(UCFG_write_wifi_ssid(pack.datas, pack.len))
         {
             ble_res_success(pack.cmd);
         }
@@ -683,7 +683,7 @@ static void received_handle(uint8_t* data, uint8_t len)
 
     if(pack.cmd == BLE_CMD_WIFI_PASSWORD)
     {
-        if(UCFG_write_wifi_password(pack.data, pack.len))
+        if(UCFG_write_wifi_password(pack.datas, pack.len))
         {
             ble_res_success(pack.cmd);
         }
@@ -697,7 +697,7 @@ static void received_handle(uint8_t* data, uint8_t len)
 
     if(pack.cmd == BLE_CMD_MQTT_PORT)
     {
-        uint16_t* port = (uint16_t*)pack.data;
+        uint16_t* port = (uint16_t*)pack.datas;
         
         if(pack.len < 2)
         {
@@ -720,7 +720,7 @@ static void received_handle(uint8_t* data, uint8_t len)
 
     if(pack.cmd == BLE_CMD_MQTT_HOST)
     {
-        if(UCFG_write_mqtt_host(pack.data, pack.len))
+        if(UCFG_write_mqtt_host(pack.datas, pack.len))
         {
             ble_res_success(pack.cmd);
         }
@@ -739,7 +739,7 @@ static void received_handle(uint8_t* data, uint8_t len)
             return;
         }
 
-        if(UCFG_write_temp_offset(pack.data[0]))
+        if(UCFG_write_temp_offset(pack.datas[0]))
         {
             ble_res_success(pack.cmd);
         }
@@ -759,7 +759,7 @@ static void received_handle(uint8_t* data, uint8_t len)
             return;
         }
 
-        if(UCFG_write_temp_limit(pack.data[0]))
+        if(UCFG_write_temp_limit(pack.datas[0]))
         {
             ble_res_success(pack.cmd);
         }
@@ -779,15 +779,15 @@ static void received_handle(uint8_t* data, uint8_t len)
             return;
         }
 
-        if( pack.data[0] != CONNECTION_WIFI && 
-            pack.data[0] != CONNECTION_ETH)
+        if( pack.datas[0] != CONNECTION_WIFI && 
+            pack.datas[0] != CONNECTION_ETH)
         {
             ESP_LOGE(GATTS_TAG, "CMD: %d, data: %d invalid", pack.cmd, pack.len);
             ble_res_failure(pack.cmd);
             return;
         }
 
-        if(UCFG_write_connection(pack.data[0]))
+        if(UCFG_write_connection(pack.datas[0]))
         {
             ble_res_success(pack.cmd);
         }
@@ -799,18 +799,18 @@ static void received_handle(uint8_t* data, uint8_t len)
         return;
     }
 
-    if(pack.cmd == BLE_CMD_CONFIG_COMMIT)
-    {
-        if(UCFG_save())
-        {
-            ble_res_success(pack.cmd);
-        }
-        else
-        {
-            ble_res_failure(pack.cmd);
-        }
-        return;
-    }
+    // if(pack.cmd == BLE_CMD_CONFIG_COMMIT)
+    // {
+    //     if(UCFG_save())
+    //     {
+    //         ble_res_success(pack.cmd);
+    //     }
+    //     else
+    //     {
+    //         ble_res_failure(pack.cmd);
+    //     }
+    //     return;
+    // }
 
     // CA file
     if(pack.cmd == BLE_CMD_MQTT_CA_BEGIN)
@@ -821,7 +821,7 @@ static void received_handle(uint8_t* data, uint8_t len)
         return;
     }
 
-    if(pack.cmd == BLE_CMD_MQTT_CA_END])
+    if(pack.cmd == BLE_CMD_MQTT_CA_END)
     {
         if(UCFG_write_mqtt_ca(ca_file, ca_write_index + 1))
         {
@@ -838,7 +838,7 @@ static void received_handle(uint8_t* data, uint8_t len)
     {
         for(uint8_t i = 0; i < pack.len; i++)
         {
-            ca_file[ca_write_index] = pack.data[i];
+            ca_file[ca_write_index] = pack.datas[i];
             ca_write_index++;
         }
         ble_res_success(pack.cmd);

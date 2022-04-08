@@ -88,7 +88,7 @@ static void print_char_val_type(esp_adc_cal_value_t val_type)
     }
 }
 
-static int16_t ntc_lookup(float r)
+static float ntc_lookup(float r)
 {
     int i;
     if (r >= NTC_TABLE_res[0])
@@ -139,14 +139,28 @@ void NTC_init(void)
     // print_char_val_type(val_type);
 }
 
-int16_t NTC_read(uint8_t channel)
+float NTC_read(uint8_t channel)
 {
     ESP_ERROR_CHECK(channel >= 3 ? ESP_FAIL : ESP_OK);
 
     uint32_t adc_reading = adc1_get_raw((adc1_channel_t)ntc_channels[channel].channel);
     float voltage        = esp_adc_cal_raw_to_voltage(adc_reading,&ntc_channels[channel].characteristic);
     float r              = (DEFUALT_PULLUP_R*voltage)/(DEFAULT_VREF - voltage);
-    ESP_LOGI(TAG, "Channel [%d]: V = %d mV, R = %f Ohm", channel ,(int)voltage, r);
+    // ESP_LOGI(TAG, "Channel [%d]: V = %d mV, R = %f Ohm", channel ,(int)voltage, r);
 
     return ntc_lookup(r);
+}
+
+void NTC_Test(void)
+{
+    while(true)
+    {
+        float temp[3] = {0};
+        temp[0] = NTC_read(0);
+        temp[1] = NTC_read(1);
+        temp[2] = NTC_read(2);
+
+        ESP_LOGI(TAG, "[0]: %f, [1]: %f, [2]: %f", temp[0], temp[1], temp[2]);
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
 }

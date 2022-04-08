@@ -17,6 +17,10 @@
         "argtable3.h": "c",
         "connect.h": "c",
         "esp_log.h": "c",
-        "adc_channel.h": "c"
+        "adc_channel.h": "c",
+        "param.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c"
     }
 }

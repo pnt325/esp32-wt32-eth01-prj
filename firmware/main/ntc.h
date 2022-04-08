@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 void NTC_init(void);
-int16_t NTC_read(uint8_t channel);
+float NTC_read(uint8_t channel);
+void NTC_Test(void);
 
 #endif /*_NTC_H_*/

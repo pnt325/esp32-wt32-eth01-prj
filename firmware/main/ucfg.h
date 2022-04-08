@@ -31,9 +31,8 @@
 #define MQTT_CONFIG_ACTIVE  1
 
 void UCFG_init(void);
-bool UCFG_load(void);
-void UCFG_work_hour_set(uint8_t index, uint32_t wh);
-
+bool UCFG_write_work_hour(uint32_t* hours);
+bool UCFG_read_work_hour(uint32_t* hours);
 bool UCFG_write_wifi_ssid(uint8_t* data, uint8_t len);
 bool UCFG_read_wifi_ssid(uint8_t* data, uint8_t len);
 bool UCFG_write_wifi_password(uint8_t* data, uint8_t len);
@@ -42,7 +41,7 @@ bool UCFG_write_mqtt_port(uint16_t port);
 bool UCFG_read_mqtt_port(uint16_t* port);
 bool UCFG_write_mqtt_host(uint8_t* data, uint8_t len);
 bool UCFG_read_mqtt_host(uint8_t* data, uint8_t* len);
-bool UCFG_write_temp_offet(int8_t value);
+bool UCFG_write_temp_offset(int8_t value);
 bool UCFG_read_temp_offset(int8_t* value);
 bool UCFG_write_temp_limit(uint8_t value);
 bool UCFG_read_temp_limit(uint8_t* value);
@@ -50,6 +49,7 @@ bool UCFG_write_connection(uint8_t value);
 bool UCFG_read_connection(uint8_t* value);
 bool UCFG_write_mqtt_ca(uint8_t* data, uint8_t len);
 bool UCFG_read_mqtt_ca(uint8_t* data, uint8_t* len);
-bool UCFG_save(void);
+
+void UCFG_test(void);
 
 #endif /*_UCFG_H_*/
