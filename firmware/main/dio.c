@@ -25,6 +25,7 @@
 gpio_num_t gpio_channels[] = {GPIO_INPUT_IO_0,
                               GPIO_INPUT_IO_1,
                               GPIO_INPUT_IO_2};
+static uint8_t led_state = 0;
 
 void DIO_init(void)
 {
@@ -60,33 +61,47 @@ uint8_t DIO_button_state(void)
 void DIO_led_on(void)
 {
     gpio_set_level(GPIO_LED, 0);
+    led_state = 1;
 }
 
 void DIO_led_off(void)
 {
     gpio_set_level(GPIO_LED, 1);
+    led_state = 0;
+}
+
+void DIO_led_toggle(void)
+{
+    if(led_state)
+    {
+        DIO_led_off();
+    }
+    else
+    {
+        DIO_led_on();
+    }
 }
 
 void DIO_test(void)
 {
-    uint8_t btn_state[4] = {0};
-    uint8_t btn_state_old[4] = {0};
+    static uint8_t btn_state[4] = {0};
+    static uint8_t btn_state_old[4] = {0};
 
-    btn_state[0] = DIO_status(0);
-    btn_state[1] = DIO_status(1);
-    btn_state[2] = DIO_status(2);
-    btn_state[3] = DIO_button_state();
+    // btn_state[0] = DIO_status(0);
+    // btn_state[1] = DIO_status(1);
+    // btn_state[2] = DIO_status(2);
+    // btn_state[3] = DIO_button_state();
 
-    // Copy last status
-    for(uint8_t i = 0; i < sizeof(btn_state); i++)
-    {
-        btn_state_old[i] = btn_state[i];
-    }
+    // // Copy last status
+    // for(uint8_t i = 0; i < sizeof(btn_state); i++)
+    // {
+    //     btn_state_old[i] = btn_state[i];
+    // }
 
-    ESP_LOGI("DI_TEST", "status channel: %d, %d, %d, Button: %s", btn_state[0], btn_state[1], btn_state[2], btn_state[3] ? "Release" : "Pressed");
+    // ESP_LOGI("DI_TEST", "status channel: %d, %d, %d, Button: %s", btn_state[0], btn_state[1], btn_state[2], btn_state[3] ? "Release" : "Pressed");
 
-    while(true)
-    {
+    // while(true)
+    // {
         btn_state[0] = DIO_status(0);
         btn_state[1] = DIO_status(1);
         btn_state[2] = DIO_status(2);
@@ -119,6 +134,6 @@ void DIO_test(void)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
+        // vTaskDelay(pdMS_TO_TICKS(100));
+    // }
 }

@@ -23,6 +23,7 @@ static nvs_handle_t nvs_cfg;
 void UCFG_init(void)
 {
     ESP_ERROR_CHECK(nvs_open(UCFG_NAMESPACE_STR, NVS_READWRITE, &nvs_cfg));
+    UCFG_test();
 }
 
 bool UCFG_write_work_hour(uint32_t* hours)
@@ -74,17 +75,14 @@ bool UCFG_write_wifi_ssid(uint8_t* data, uint8_t len)
     return (ret == ESP_OK);
 }
 
-bool UCFG_read_wifi_ssid(uint8_t* data, uint8_t len)
+bool UCFG_read_wifi_ssid(uint8_t* data, uint8_t* len)
 {
-    static uint8_t ssid[32];
-    size_t data_len = sizeof(ssid);
-    if(data == NULL)
+    if(data == NULL || len  == NULL || *len < 32)
     {
         ESP_ERROR_CHECK(ESP_FAIL);
     }
 
-    esp_err_t ret = nvs_get_str(nvs_cfg, UCFG_WIFI_SSID_STR, (const char*)ssid, &data_len);
-    data = &ssid[0];
+    esp_err_t ret = nvs_get_str(nvs_cfg, UCFG_WIFI_SSID_STR, (char*)data, (size_t*)len);
 
     return (ret == ESP_OK);
 }
@@ -106,18 +104,14 @@ bool UCFG_write_wifi_password(uint8_t* data, uint8_t len)
     return (ret == ESP_OK);
 }
 
-bool UCFG_read_wifi_password(uint8_t* data, uint8_t len)
+bool UCFG_read_wifi_password(uint8_t* data, uint8_t* len)
 {
-    static uint8_t pass[64];
-    size_t data_size = sizeof(pass);
-    if(data == NULL)
+    if(data == NULL || len == NULL || *len < 64)
     {
         ESP_ERROR_CHECK(ESP_FAIL);
     }
 
-    esp_err_t ret = nvs_get_str(nvs_cfg, UCFG_WIFI_SSID_STR, (const char*)pass, &data_size);
-    data = &pass[0];
-
+    esp_err_t ret = nvs_get_str(nvs_cfg, UCFG_WIFI_PSWD_STR, (char*)data, (size_t*)len);
     return (ret == ESP_OK);
 }
 
@@ -158,16 +152,12 @@ bool UCFG_write_mqtt_host(uint8_t* data, uint8_t len)
 
 bool UCFG_read_mqtt_host(uint8_t* data, uint8_t* len)
 {
-    static uint8_t mqtt_host[32];
-    size_t data_size = sizeof(mqtt_host);
-    
-    if(data == NULL)
+    if(data ==  NULL || len == NULL || *len < 32)
     {
         ESP_ERROR_CHECK(ESP_FAIL);
-    }   
+    }
 
-    esp_err_t ret = nvs_get_str(nvs_cfg, UCFG_MQTT_HOST_STR, (const char*)mqtt_host, &data_size);
-
+    esp_err_t ret = nvs_get_str(nvs_cfg, UCFG_MQTT_HOST_STR, (char*)data, (size_t*)len);
     return (ret == ESP_OK);
 }
 
@@ -206,7 +196,7 @@ bool UCFG_read_temp_limit(uint8_t* value)
 
 bool UCFG_write_connection(uint8_t value)
 {
-    esp_err_t ret = nvs_set_u8(nvs_cfg, UCFG_TEMP_LIMIT_STR, value);
+    esp_err_t ret = nvs_set_u8(nvs_cfg, UCFG_CONNECTION_STR, value);
     return (ret == ESP_OK);
 }
 
@@ -216,7 +206,7 @@ bool UCFG_read_connection(uint8_t* value)
     {
         ESP_ERROR_CHECK(ESP_FAIL);
     }
-    esp_err_t ret = nvs_get_u8(nvs_cfg, UCFG_TEMP_LIMIT_STR, value);
+    esp_err_t ret = nvs_get_u8(nvs_cfg, UCFG_CONNECTION_STR, value);
     return (ret == ESP_OK);
 }
 
@@ -232,12 +222,9 @@ bool UCFG_write_mqtt_ca(uint8_t* data, uint8_t len)
     return (ret == ESP_OK);
 }
 
-bool UCFG_read_mqtt_ca(uint8_t* data, uint8_t* len)
+bool UCFG_read_mqtt_ca(uint8_t* data, uint16_t* len)
 {
-    static uint8_t mqtt_ca[2048];
-    size_t data_size = sizeof(mqtt_ca);
-
-    esp_err_t ret = nvs_get_str(nvs_cfg, UCFG_MQTT_CA_STR, (const char*)data, &data_size);
+    esp_err_t ret = nvs_get_str(nvs_cfg, UCFG_MQTT_CA_STR, (char*)data, (size_t*)len);
 
     return (ret ==  ESP_OK);
 }
@@ -246,17 +233,87 @@ void UCFG_test(void)
 {
     uint8_t temp_limit = 0;
 
-    while(true){
-        vTaskDelay(pdTICKS_TO_MS(100));
+    if (UCFG_read_temp_limit(&temp_limit))
+    {
+        ESP_LOGI(UCFG_TAG, "Get temp limit: %d", temp_limit);
+    }
+    else
+    {
+        ESP_LOGI(UCFG_TAG, "Get temp Error: %d", temp_limit);
+    }
 
-        if(UCFG_read_temp_limit(&temp_limit))
-        {
-            ESP_LOGI(UCFG_TAG, "Get temp limit: %d", temp_limit);
-        }
-        else
-        {
-            ESP_LOGI(UCFG_TAG, "Get temp Error: %d", temp_limit);
-        }
+    // Work hour
+    uint32_t hours[3] = {0};
+    if(UCFG_read_work_hour(hours))
+    {
+        ESP_LOGI(UCFG_TAG, "Get work hours: %d, %d, %d", hours[0], hours[1], hours[2]);
+    }
+    else
+    {
+        ESP_LOGI(UCFG_TAG, "Get work hours failure");
+    }
+
+    uint8_t wifi_ssid[32];
+    uint8_t len = 32;
+    if(UCFG_read_wifi_ssid(wifi_ssid, &len))
+    {
+        ESP_LOGI(UCFG_TAG, "Get wifi ssid: %s", wifi_ssid);
+    }
+    else 
+    {
+        ESP_LOGI(UCFG_TAG, "Get wifi ssid failure");
+    }
+
+    uint8_t wifi_pass[64];
+    len = 64;
+    if(UCFG_read_wifi_password(wifi_pass, &len))
+    {
+        ESP_LOGI(UCFG_TAG, "Get wifi passworkd: %s", wifi_pass);
+    }
+    else 
+    {
+        ESP_LOGI(UCFG_TAG, "Get wifi password failure");
+    }
+
+    uint16_t mqtt_port;
+    if(UCFG_read_mqtt_port(&mqtt_port))
+    {
+        ESP_LOGI(UCFG_TAG, "Get mqtt port: %d", mqtt_port);
+    }
+    else 
+    {
+        ESP_LOGI(UCFG_TAG, "Get mqtt port failure");
+    }
+
+    uint8_t mqtt_host[32];
+    len = 32;
+    if(UCFG_read_mqtt_host(mqtt_host, &len))
+    {
+        ESP_LOGI(UCFG_TAG, "Get mqtt host: %s", mqtt_host);
+    }
+    else 
+    {
+        ESP_LOGI(UCFG_TAG, "Get mqtt host failure");
+    }
+
+    int8_t temp_offset = 0;
+    if(UCFG_read_temp_offset(&temp_offset))
+    {
+        ESP_LOGI(UCFG_TAG, "Get temp offset: %d", temp_offset);
+    }
+    else 
+    {
+        ESP_LOGI(UCFG_TAG, "Get temp offset failure");
+    }
+
+    uint8_t connection = 0;
+    if(UCFG_read_connection(&connection))
+    {
+        ESP_LOGI(UCFG_TAG, "Get connection: %d", connection);
+    }
+    else 
+    {
+        ESP_LOGI(UCFG_TAG, "Get connection failure");
     }
 }
 

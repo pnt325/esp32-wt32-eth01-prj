@@ -5,7 +5,7 @@ wifi_pswd,data,string,password
 mqtt_config,data,u8,0
 mqtt_host,data,string,host
 mqtt_port,data,u16,8883
-mqtt_ca,data,string,none
+mqtt_ca,file,string,C:\Users\phatn\Documents\git_repo\freelance-WT32-ETH01\firmware\main\ca.crt
 work_hours,data,binary,0
 connection,data,u8,0
 temp_offset,data,i8,0

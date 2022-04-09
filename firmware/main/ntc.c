@@ -128,15 +128,6 @@ void NTC_init(void)
         esp_adc_cal_value_t val_type = esp_adc_cal_characterize(unit, atten, width, DEFAULT_VREF, &ntc_channels[i].characteristic);
         print_char_val_type(val_type);
     }
-
-    // adc1_config_width(width);
-    // adc1_config_channel_atten(channel, atten);
-
-    // //Characterize ADC
-    // // adc_chars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
-    // esp_adc_cal_value_t val_type = esp_adc_cal_characterize(unit, atten, width, DEFAULT_VREF, adc_chars);
-
-    // print_char_val_type(val_type);
 }
 
 float NTC_read(uint8_t channel)
@@ -146,7 +137,6 @@ float NTC_read(uint8_t channel)
     uint32_t adc_reading = adc1_get_raw((adc1_channel_t)ntc_channels[channel].channel);
     float voltage        = esp_adc_cal_raw_to_voltage(adc_reading,&ntc_channels[channel].characteristic);
     float r              = (DEFUALT_PULLUP_R*voltage)/(DEFAULT_VREF - voltage);
-    // ESP_LOGI(TAG, "Channel [%d]: V = %d mV, R = %f Ohm", channel ,(int)voltage, r);
 
     return ntc_lookup(r);
 }

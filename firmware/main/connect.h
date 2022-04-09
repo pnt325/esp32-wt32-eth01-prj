@@ -9,10 +9,13 @@
 #define _CONNECT_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define CONNECTED    1
 #define DISCONNECTED 0
 
-void CONNECT_init(void);
+bool CONNECT_init(uint8_t connections);
+void CONNECT_sub_connected_event(void(*callback)(void));
+void CONNECT_sub_disconnected_event(void(*callback)(void));
 
 #endif /*_CONNECT_H_*/

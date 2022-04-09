@@ -23,6 +23,7 @@
 #include "esp_tls.h"
 #include "esp_ota_ops.h"
 #include <sys/param.h>
+#include "ucfg.h"
 
 static const char *TAG = "MQTTS_EXAMPLE";
 
@@ -31,41 +32,8 @@ static SemaphoreHandle_t publish_block;
 static mqtt_event_cb_t mqtt_event;
 
 static uint8_t mqtt_connect = 0;
-extern uint8_t ca_file[2048];
+static uint8_t mqtt_ca_file[2048];
 
-// #if CONFIG_BROKER_CERTIFICATE_OVERRIDDEN == 1
-// static const uint8_t mqtt_eclipseprojects_io_pem_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
-// #else
-// extern const uint8_t mqtt_eclipseprojects_io_pem_start[]   asm("_binary_mqtt_eclipseprojects_io_pem_start");
-// #endif
-// extern const uint8_t mqtt_eclipseprojects_io_pem_end[]   asm("_binary_mqtt_eclipseprojects_io_pem_end");
-
-//
-// Note: this function is for testing purposes only publishing part of the active partition
-//       (to be checked against the original binary)
-//
-// static void send_binary(esp_mqtt_client_handle_t client)
-// {
-//     spi_flash_mmap_handle_t out_handle;
-//     const void *binary_address;
-//     const esp_partition_t *partition = esp_ota_get_running_partition();
-//     esp_partition_mmap(partition, 0, partition->size, SPI_FLASH_MMAP_DATA, &binary_address, &out_handle);
-//     // sending only the configured portion of the partition (if it's less than the partition size)
-//     int binary_size = MIN(CONFIG_BROKER_BIN_SIZE_TO_SEND,partition->size);
-//     int msg_id = esp_mqtt_client_publish(client, "/topic/binary", binary_address, binary_size, 0, 0);
-//     ESP_LOGI(TAG, "binary sent with msg_id=%d", msg_id);
-// }
-
-/*
- * @brief Event handler registered to receive MQTT events
- *
- *  This function is called by the MQTT client event loop.
- *
- * @param handler_args user data registered to the event.
- * @param base Event base for the handler(always MQTT Base in this example).
- * @param event_id The id for the received event.
- * @param event_data The data for the event, esp_mqtt_event_handle_t.
- */
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
@@ -75,15 +43,15 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-        msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
+        msg_id = esp_mqtt_client_subscribe(client, "test", 0);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
-        msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
-        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        // msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
+        // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
-        msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
-        ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
-        mqtt_connect = 1;
+        // msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
+        // ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
+        // mqtt_connect = 1;
         if(mqtt_event)
         {
             mqtt_event(1);
@@ -100,8 +68,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
     case MQTT_EVENT_SUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-        msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
-        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        // msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
+        // ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_UNSUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
@@ -113,10 +81,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
         printf("DATA=%.*s\r\n", event->data_len, event->data);
-        // if (strncmp(event->data, "send binary please", event->data_len) == 0) {
-        //     ESP_LOGI(TAG, "Sending the binary");
-        //     send_binary(client);
-        // }
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -142,25 +106,22 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
-// static void mqtt_app_start(void)
-// {
-//     const esp_mqtt_client_config_t mqtt_cfg = {
-//         .uri = "192.168.1.1",
-//         .cert_pem = (const char *)ca_file,
-//     };
-
-//     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
-//     mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
-//     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
-//     esp_mqtt_client_register_event(mqtt_client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
-//     esp_mqtt_client_start(mqtt_client);
-// }
-
 void MQTT_init(mqtt_event_cb_t event)
 {
+    uint16_t len = sizeof(mqtt_ca_file);
+    if(UCFG_read_mqtt_ca(mqtt_ca_file, &len) == false)
+    {
+        ESP_ERROR_CHECK(ESP_FAIL);
+    }
+
+    ESP_LOGI(TAG, "%s", mqtt_ca_file);  
+    // ESP_ERROR_CHECK(esp_tls_set_global_ca_store((const unsigned char*)mqtt_ca_file, strlen((const char*)mqtt_ca_file)));
+
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = "192.168.1.1",
-        .cert_pem = (const char *)ca_file,
+        .uri = "mqtts://192.168.0.105:8883",
+        .cert_pem = (const char *)mqtt_ca_file,
+        .username = "uwt32",
+        .password = "wt32"
     };
 
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
@@ -168,6 +129,8 @@ void MQTT_init(mqtt_event_cb_t event)
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     esp_mqtt_client_register_event(mqtt_client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_mqtt_client_start(mqtt_client);
+
+    mqtt_event = event;
 }
 
 void MQTT_publish(const char* topic, const char* data, uint16_t len)

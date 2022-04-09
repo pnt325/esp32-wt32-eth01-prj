@@ -12,21 +12,62 @@
 #include "wifi.h"
 #include "eth.h"
 #include "esp_log.h"
+#include "ucfg.h"
 
-static uint8_t is_conn_evt = 0;
-SemaphoreHandle_t cnn_notify;
+typedef void(*connection_evt_t)(void);
+
+static connection_evt_t connected_evt;
+static connection_evt_t disconnected_evt;
 
 #define CONNECT_TAG "CONNECT"
 
-void CONNECT_init(void)
+bool CONNECT_init(uint8_t connection)
 {
-    cnn_notify = xSemaphoreCreateBinary();
-    esp_err_t ret = cnn_notify != NULL ? ESP_OK : ESP_FAIL;
-    ESP_ERROR_CHECK(ret);
+    if(connection != CONNECTION_WIFI && connection != CONNECTION_ETH)
+    {
+        ESP_LOGE(CONNECT_TAG, "Connection invalid:%d", connection);
+        return false;
+    }
 
-    // TODO check what is connection selected
-    WIFI_start("Phatwifi", "a523456789");
-    xSemaphoreTake(cnn_notify, portMAX_DELAY);      //! Wait for connection establish
+    if (connection == CONNECTION_WIFI)
+    {
+        uint8_t ssid[32] = {0};
+        uint8_t len = 32;
+        uint8_t pswd[64] = {0};
+        
+        if(UCFG_read_wifi_ssid(ssid, &len) == false)
+        {
+            ESP_LOGE(CONNECT_TAG, "Get wifi ssid failure");
+            return false;
+        }
+
+        len = 64;
+        if(UCFG_read_wifi_password(pswd, &len) == false)
+        {
+            ESP_LOGE(CONNECT_TAG, "Get wifi password failure");
+            return false;
+        }
+
+        WIFI_start((const char*)ssid, (const char*)pswd);
+    }
+    else if (connection == CONNECTION_ETH)
+    {
+        ETH_start();
+    }
+
+    // xSemaphoreTake(cnn_notify, portMAX_DELAY);
+
+    return true;
+}
+
+void CONNECT_sub_connected_event(void(*callback)(void))
+{
+    connected_evt = callback;
+}
+
+void CONNECT_sub_disconnected_event(void(*callback)(void))
+{
+    disconnected_evt = callback;
 }
 
 void CONNECT_evt(uint8_t status)
@@ -34,16 +75,18 @@ void CONNECT_evt(uint8_t status)
     if(status == CONNECTED)
     {
         ESP_LOGI(CONNECT_TAG, "Connected");
-        if(is_conn_evt == 0)
+        if(connected_evt)
         {
-            xSemaphoreGive(cnn_notify);
-            is_conn_evt = 1;    
+            connected_evt();
         }
     }
     else    //!  DISCONECTED
     {
         ESP_LOGI(CONNECT_TAG, "Disconnected");
-        // TODO Trigger blink LED
+        if(disconnected_evt)
+        {
+            disconnected_evt();
+        }
     }
 }
 

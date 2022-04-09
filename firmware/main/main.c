@@ -17,21 +17,41 @@
 #include "connect.h"
 #include "ucfg.h"
 
+#include "app.h"
+
 #define TAG "MAIN"
+
+static void app_test(void);
+
+static void task_test(void* param)
+{
+
+  char* data = (char*)param;
+  while(true)
+  {
+    ESP_LOGI(TAG, "%s", data);
+    vTaskDelay(100);
+  }
+}
 
 void app_main(void)
 {
-    //Initialize NVS
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-      ESP_ERROR_CHECK(nvs_flash_erase());
-      ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
+  // Initialize NVS
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+  {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(ret);
 
-    // CONNECT_init();
-    // ESP_LOGI(TAG, "Main connected");
+  APP_init();
+  // app_test();
+}
 
+static void app_test(void)
+{
+  return;
 // #define TEST_DI
 #ifdef TEST_DI
   DIO_init();
@@ -44,32 +64,10 @@ void app_main(void)
   NTC_Test();
 #endif
 
-#define TEST_UCFG
+// #define TEST_UCFG
 #ifdef TEST_UCFG
   UCFG_init();
   UCFG_test();
 #endif 
 
-// #define NTC
-// #define BLE
-
-// #if defined ETH
-//     ETH_start();
-// #elif defined WIF
-//     WIFI_start("Phatwifi", "a523456789")
-// #elif defined NTC
-//     NTC_init();
-//     while(1)
-//     {
-//         int temp = NTC_read();
-//         ESP_LOGI(TAG, "NTC Temperature: %d (degree)", temp);
-//         vTaskDelay(pdMS_TO_TICKS(1000));
-//     }
-// #elif defined BLE
-//     if(BLE_start() == false)
-//     {
-//         ESP_LOGE(TAG, "BLE Init error");
-//         return;
-//     }
-// #endif
 }

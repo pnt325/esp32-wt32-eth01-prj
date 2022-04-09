@@ -21,6 +21,14 @@
         "param.h": "c",
         "array": "c",
         "string": "c",
-        "string_view": "c"
+        "string_view": "c",
+        "regex": "cpp",
+        "task.h": "c",
+        "freertos.h": "c",
+        "ntc.h": "c",
+        "wifi.h": "c",
+        "ble.h": "c",
+        "dio.h": "c",
+        "eth.h": "c"
     }
 }
