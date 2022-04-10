@@ -38,6 +38,11 @@ bool UCFG_write_work_hour(uint32_t* hours)
     }
 
     esp_err_t ret = nvs_set_blob(nvs_cfg, UCFG_WORK_HOUR_STR, hours, sizeof(uint32_t)*3);
+    if(ret == ESP_OK)
+    {
+        ret = nvs_commit(nvs_cfg);
+    }
+
     return (ret == ESP_OK);
 }
 
@@ -71,6 +76,10 @@ bool UCFG_write_wifi_ssid(uint8_t* data, uint8_t len)
     }
 
     esp_err_t ret = nvs_set_str(nvs_cfg, UCFG_WIFI_SSID_STR, (const char*)data);
+    if (ret == ESP_OK)
+    {
+        ret = nvs_commit(nvs_cfg);
+    }
 
     return (ret == ESP_OK);
 }
@@ -101,6 +110,10 @@ bool UCFG_write_wifi_password(uint8_t* data, uint8_t len)
     }
 
     esp_err_t ret = nvs_set_str(nvs_cfg, UCFG_WIFI_PSWD_STR, (const char*)data);
+    if(ret == ESP_OK)
+    {
+        ret = nvs_commit(nvs_cfg);
+    }
     return (ret == ESP_OK);
 }
 
@@ -118,7 +131,10 @@ bool UCFG_read_wifi_password(uint8_t* data, uint8_t* len)
 bool UCFG_write_mqtt_port(uint16_t port)
 {
     esp_err_t ret = nvs_set_u16(nvs_cfg, UCFG_MQTT_PORT_STR, port);
-
+    if(ret == ESP_OK)
+    {
+        ret = nvs_commit(nvs_cfg);
+    }
     return (ret == ESP_OK);
 }
 
@@ -146,7 +162,10 @@ bool UCFG_write_mqtt_host(uint8_t* data, uint8_t len)
     }
 
     esp_err_t ret = nvs_set_str(nvs_cfg, UCFG_MQTT_HOST_STR, ( const char*)data);
-
+    if(ret == ESP_OK)
+    {
+        ret = nvs_commit(nvs_cfg);
+    }
     return (ret == ESP_OK);
 }
 
@@ -161,19 +180,25 @@ bool UCFG_read_mqtt_host(uint8_t* data, uint8_t* len)
     return (ret == ESP_OK);
 }
 
-bool UCFG_write_temp_offset(int8_t value)
-{
-    esp_err_t ret = nvs_set_i8(nvs_cfg, UCFG_TEMP_OFFSET_STR, value);
+bool UCFG_write_temp_offset(float value)
+{   
+    size_t len = sizeof(float);   
+    esp_err_t ret = nvs_set_blob(nvs_cfg, UCFG_TEMP_OFFSET_STR, &value, len);
+    if(ret == ESP_OK)
+    {
+        ret = nvs_commit(nvs_cfg);
+    }
     return (ret == ESP_OK);
 }
 
-bool UCFG_read_temp_offset(int8_t* value)
+bool UCFG_read_temp_offset(float* value)
 {
+    size_t len = sizeof(float);
     if (value == NULL)
     {
         ESP_ERROR_CHECK(ESP_FAIL);
     }
-    esp_err_t ret = nvs_get_i8(nvs_cfg, UCFG_TEMP_OFFSET_STR, value);
+    esp_err_t ret = nvs_get_blob(nvs_cfg, UCFG_TEMP_OFFSET_STR, value, &len);
 
     return (ret == ESP_OK);
 }
@@ -181,6 +206,10 @@ bool UCFG_read_temp_offset(int8_t* value)
 bool UCFG_write_temp_limit(uint8_t value)
 {
     esp_err_t ret = nvs_set_u8(nvs_cfg, UCFG_TEMP_LIMIT_STR, value);
+    if(ret == ESP_OK)
+    {
+        ret = nvs_commit(nvs_cfg);
+    }
     return (ret == ESP_OK);
 }
 
@@ -197,6 +226,10 @@ bool UCFG_read_temp_limit(uint8_t* value)
 bool UCFG_write_connection(uint8_t value)
 {
     esp_err_t ret = nvs_set_u8(nvs_cfg, UCFG_CONNECTION_STR, value);
+    if(ret == ESP_OK)
+    {
+        ret = nvs_commit(nvs_cfg);
+    }
     return (ret == ESP_OK);
 }
 
@@ -218,7 +251,10 @@ bool UCFG_write_mqtt_ca(uint8_t* data, uint8_t len)
     }
 
     esp_err_t ret =  nvs_set_str(nvs_cfg, UCFG_MQTT_CA_STR, (const char*)data);
-
+    if(ret == ESP_OK)
+    {
+        ret = nvs_commit(nvs_cfg);
+    }
     return (ret == ESP_OK);
 }
 
@@ -296,10 +332,10 @@ void UCFG_test(void)
         ESP_LOGI(UCFG_TAG, "Get mqtt host failure");
     }
 
-    int8_t temp_offset = 0;
-    if(UCFG_read_temp_offset(&temp_offset))
+    float temp_offset = 0.5f;
+    if(UCFG_write_temp_offset(temp_offset))
     {
-        ESP_LOGI(UCFG_TAG, "Get temp offset: %d", temp_offset);
+        ESP_LOGI(UCFG_TAG, "Get temp offset success");
     }
     else 
     {

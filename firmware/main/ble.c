@@ -42,8 +42,9 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 #define TEST_MANUFACTURER_DATA_LEN 17
 
 #define GATTS_DEMO_CHAR_VAL_LEN_MAX 0x40
-#define PREPARE_BUF_MAX_SIZE 1024
+#define PREPARE_BUF_MAX_SIZE 140
 
+static bool is_notify = 0;
 static uint8_t ca_file[2048];
 static uint8_t ca_write_index;
 static SemaphoreHandle_t send_block;
@@ -243,18 +244,6 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
     {
         if (param->write.is_prep)
         {
-            // if (prepare_write_env->prepare_buf == NULL)
-            // {
-            //     prepare_write_env->prepare_buf = (uint8_t *)malloc(PREPARE_BUF_MAX_SIZE * sizeof(uint8_t));
-            //     prepare_write_env->prepare_len = 0;
-            //     if (prepare_write_env->prepare_buf == NULL)
-            //     {
-            //         ESP_LOGE(GATTS_TAG, "Gatt_server prep no mem\n");
-            //         status = ESP_GATT_NO_RESOURCES;
-            //     }
-            // }
-            // else
-            // {
             if (param->write.offset > PREPARE_BUF_MAX_SIZE)
             {
                 status = ESP_GATT_INVALID_OFFSET;
@@ -263,7 +252,6 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
             {
                 status = ESP_GATT_INVALID_ATTR_LEN;
             }
-            // }
 
             esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)malloc(sizeof(esp_gatt_rsp_t));
             gatt_rsp->attr_value.len = param->write.len;
@@ -304,11 +292,6 @@ void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble
     {
         ESP_LOGI(GATTS_TAG, "ESP_GATT_PREP_WRITE_CANCEL");
     }
-    // if (prepare_write_env->prepare_buf)
-    // {
-    //     free(prepare_write_env->prepare_buf);
-    //     prepare_write_env->prepare_buf = NULL;
-    // }
     prepare_write_env->prepare_len = 0;
 }
 
@@ -388,12 +371,14 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
                 {
                     if (a_property & ESP_GATT_CHAR_PROP_BIT_NOTIFY)
                     {
+                        is_notify = true;
                         ESP_LOGI(GATTS_TAG, "notify enable");
                         uint8_t notify_data[15];
                         for (int i = 0; i < sizeof(notify_data); ++i)
                         {
                             notify_data[i] = i % 0xff;
                         }
+
                         // the size of notify_data[] need less than MTU size
                         esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[PROFILE_A_APP_ID].char_handle,
                                                     sizeof(notify_data), notify_data, false);
@@ -416,6 +401,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
                 }
                 else if (descr_value == 0x0000)
                 {
+                    is_notify = false;
                     ESP_LOGI(GATTS_TAG, "notify/indicate disable ");
                 }
                 else
@@ -527,6 +513,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGI(GATTS_TAG, "ESP_GATTS_DISCONNECT_EVT, disconnect reason 0x%x", param->disconnect.reason);
         esp_ble_gap_start_advertising(&adv_params);
+        is_notify = false;
         break;
     case ESP_GATTS_CONF_EVT:
         ESP_LOGI(GATTS_TAG, "ESP_GATTS_CONF_EVT, status %d attr_handle %d", param->conf.status, param->conf.handle);
@@ -651,13 +638,20 @@ bool BLE_send_data(uint8_t cmd, uint8_t* data, uint8_t len)
     return ble_send_data(cmd, data, len);
 }
 
+bool BLE_is_notify(void)
+{
+    return is_notify;
+}
+
 static void ble_res_success(uint8_t cmd)
 {
+    ESP_LOGI(GATTS_TAG, "Response success: %d", cmd);
     ble_send_data(BLE_CMD_ACK, &cmd, 1);
 }
 
 static void ble_res_failure(uint8_t cmd)
 {
+    ESP_LOGI(GATTS_TAG, "Response failure: %d", cmd);
     ble_send_data(BLE_CMD_NACK, &cmd, 1);
 }
 
@@ -668,8 +662,11 @@ static void received_handle(uint8_t* data, uint8_t len)
         return;
     }
 
+    ESP_LOGI(GATTS_TAG, "Received packet, cmd: %d, len: %d", pack.cmd, pack.len);
+
     if(pack.cmd == BLE_CMD_WIFI_SSID)
     {
+        ESP_LOGI(GATTS_TAG, "Write WIFI ssid: %s", pack.datas);
         if(UCFG_write_wifi_ssid(pack.datas, pack.len))
         {
             ble_res_success(pack.cmd);
@@ -683,6 +680,7 @@ static void received_handle(uint8_t* data, uint8_t len)
 
     if(pack.cmd == BLE_CMD_WIFI_PASSWORD)
     {
+        ESP_LOGI(GATTS_TAG, "Write WIFI pswd: %s", pack.datas);
         if(UCFG_write_wifi_password(pack.datas, pack.len))
         {
             ble_res_success(pack.cmd);
@@ -706,6 +704,7 @@ static void received_handle(uint8_t* data, uint8_t len)
             return;
         }
 
+        ESP_LOGI(GATTS_TAG, "Write MQTT port: %d", port[0]);
         if(UCFG_write_mqtt_port(port[0]))
         {
             ble_res_success(pack.cmd);
@@ -720,6 +719,7 @@ static void received_handle(uint8_t* data, uint8_t len)
 
     if(pack.cmd == BLE_CMD_MQTT_HOST)
     {
+        ESP_LOGI(GATTS_TAG, "Write MQTT host: %s", pack.datas);
         if(UCFG_write_mqtt_host(pack.datas, pack.len))
         {
             ble_res_success(pack.cmd);
@@ -733,13 +733,16 @@ static void received_handle(uint8_t* data, uint8_t len)
 
     if(pack.cmd == BLE_CMD_TEMP_OFFSET)
     {
-        if(pack.len == 0){
+        if(pack.len == 0 || pack.len < 4){
             ESP_LOGE(GATTS_TAG, "CMD: %d, len: %d invalid", pack.cmd, pack.len);
             ble_res_failure(pack.cmd);
             return;
         }
 
-        if(UCFG_write_temp_offset(pack.datas[0]))
+        float* value = (float*)&pack.datas[0];
+
+        ESP_LOGI(GATTS_TAG, "Write temp offset: %f", value[0]);
+        if(UCFG_write_temp_offset(value[0]))
         {
             ble_res_success(pack.cmd);
         }
@@ -759,6 +762,7 @@ static void received_handle(uint8_t* data, uint8_t len)
             return;
         }
 
+        ESP_LOGI(GATTS_TAG, "Write temp limit: %d", pack.datas[0]);
         if(UCFG_write_temp_limit(pack.datas[0]))
         {
             ble_res_success(pack.cmd);
@@ -787,6 +791,7 @@ static void received_handle(uint8_t* data, uint8_t len)
             return;
         }
 
+        ESP_LOGI(GATTS_TAG, "Write connection: %s", pack.datas[0] == 1 ? "WIFI" : pack.datas[0] == 2 ? "ETH" : "Unknown");
         if(UCFG_write_connection(pack.datas[0]))
         {
             ble_res_success(pack.cmd);
@@ -799,30 +804,19 @@ static void received_handle(uint8_t* data, uint8_t len)
         return;
     }
 
-    // if(pack.cmd == BLE_CMD_CONFIG_COMMIT)
-    // {
-    //     if(UCFG_save())
-    //     {
-    //         ble_res_success(pack.cmd);
-    //     }
-    //     else
-    //     {
-    //         ble_res_failure(pack.cmd);
-    //     }
-    //     return;
-    // }
-
     // CA file
     if(pack.cmd == BLE_CMD_MQTT_CA_BEGIN)
     {
         ca_write_index = 0;
-        memset(ca_file, 0x00, sizeof(ca_file));
+        memset(ca_file, 0x00, sizeof(ca_file)); //! Reset data to zero
+        ESP_LOGI(GATTS_TAG, "Write CA begin");
         ble_res_success(pack.cmd);
         return;
     }
 
     if(pack.cmd == BLE_CMD_MQTT_CA_END)
     {
+        ESP_LOGI(GATTS_TAG, "Write CA Data: %s", ca_file);
         if(UCFG_write_mqtt_ca(ca_file, ca_write_index + 1))
         {
             ble_res_success(pack.cmd);
@@ -836,6 +830,7 @@ static void received_handle(uint8_t* data, uint8_t len)
 
     if(pack.cmd == BLE_CMD_MQTT_CA_DATA)
     {
+        ESP_LOGI(GATTS_TAG, "Get CA Data: len = %d", pack.len);
         for(uint8_t i = 0; i < pack.len; i++)
         {
             ca_file[ca_write_index] = pack.datas[i];
@@ -866,10 +861,15 @@ static bool ble_send(uint8_t* data, uint8_t len)
 static bool ble_send_data(uint8_t cmd, uint8_t* data, uint8_t len)
 {
     uint8_t buf_len = 0;
+    if(is_notify == false)
+    {
+        return false;
+    }
+
     xSemaphoreTake(send_block, portMAX_DELAY);
     if(BLE_PTC_package(cmd, data, len, ble_data, &buf_len))
     {
-        ble_send(ble_data, len);
+        ble_send(ble_data, buf_len);
         xSemaphoreGive(send_block);
         return true;
     }

@@ -13,6 +13,9 @@
 #define BUTTON_PRESSED      0
 #define BUTTON_RELEASE      1
 
+#define STATUS_ACTIVE       0
+#define STATUS_NONE         1
+
 void DIO_init(void);
 uint8_t DIO_status(uint8_t channel);
 uint8_t DIO_button_state(void);

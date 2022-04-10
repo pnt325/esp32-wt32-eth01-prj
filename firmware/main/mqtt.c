@@ -33,6 +33,7 @@ static mqtt_event_cb_t mqtt_event;
 
 static uint8_t mqtt_connect = 0;
 static uint8_t mqtt_ca_file[2048];
+static uint8_t mqtt_host[64];
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
@@ -45,16 +46,10 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         msg_id = esp_mqtt_client_subscribe(client, "test", 0);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-
-        // msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
-        // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-
-        // msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
-        // ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
-        // mqtt_connect = 1;
+        mqtt_connect = 1;
         if(mqtt_event)
         {
-            mqtt_event(1);
+            mqtt_event(mqtt_connect);
         }
         break;
     case MQTT_EVENT_DISCONNECTED:
@@ -62,14 +57,12 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         mqtt_connect = 0;
         if(mqtt_event)
         {
-            mqtt_event(0);
+            mqtt_event(mqtt_connect);
         }
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-        // msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
-        // ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_UNSUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
@@ -114,11 +107,20 @@ void MQTT_init(mqtt_event_cb_t event)
         ESP_ERROR_CHECK(ESP_FAIL);
     }
 
-    ESP_LOGI(TAG, "%s", mqtt_ca_file);  
-    // ESP_ERROR_CHECK(esp_tls_set_global_ca_store((const unsigned char*)mqtt_ca_file, strlen((const char*)mqtt_ca_file)));
+    len = sizeof(mqtt_host);
+    if(UCFG_read_mqtt_host(mqtt_host, &len) == false)
+    {
+        ESP_ERROR_CHECK(ESP_FAIL);
+    }
+    ESP_LOGI(TAG, "%s", mqtt_host);
+    ESP_LOGI(TAG, "%s", mqtt_ca_file);
+
+    //! Create semaphore
+    publish_block = xSemaphoreCreateMutex();
 
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = "mqtts://192.168.0.105:8883",
+        // .uri = "mqtts://192.168.0.105:8883",
+        .uri = (const char*)mqtt_host,
         .cert_pem = (const char *)mqtt_ca_file,
         .username = "uwt32",
         .password = "wt32"
@@ -133,14 +135,23 @@ void MQTT_init(mqtt_event_cb_t event)
     mqtt_event = event;
 }
 
-void MQTT_publish(const char* topic, const char* data, uint16_t len)
+bool MQTT_publish(const char* topic, const char* data, uint16_t len)
 {
-    if(mqtt_connect == 0 || topic == NULL || data ==NULL || len == 0)
+    if(mqtt_connect == 0)
     {
-        return;
+        ESP_LOGE(TAG, "Publish reject: mqtt disconnected");
+        return false;
+    }
+
+    if(topic == NULL || data == NULL || len == 0)
+    {
+        ESP_ERROR_CHECK(ESP_FAIL);
     }
 
     xSemaphoreTake(publish_block, portMAX_DELAY);
+    ESP_LOGI(TAG, "Publish: %s: %s", topic, data);
     esp_mqtt_client_publish(mqtt_client, topic, data, len, 0, 0);
     xSemaphoreGive(publish_block);
+
+    return true;
 }
