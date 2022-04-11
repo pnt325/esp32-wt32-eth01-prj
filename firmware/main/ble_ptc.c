@@ -27,26 +27,28 @@ bool BLE_PTC_parse(const uint8_t* datas, uint8_t len, ble_pack_t* pack)
 
     pack->cmd = datas[0];
     pack->len = datas[1];
-    if((pack->len >= BLE_PTC_DATA_SIZE) || (pack->len >= (len - 2))){
+    if((pack->len > BLE_PTC_DATA_SIZE) || (pack->len > (len - 3))){
         ESP_LOGE(BLE_PTC_TAG, "Data size invalid");
         return false;
     }
 
     uint8_t sum = 0xff;
-    sum += pack->cmd;
-    sum += pack->len;
-
+    
     int i;
+    for(i = 0; i < pack->len + 2; i++)
+    {
+        sum += datas[i];
+    }
+
+    if(sum  != datas[i])
+    {
+        ESP_LOGE(BLE_PTC_TAG, "Checksum invalid");
+        return false;   
+    }
+
     for(i = 0; i < pack->len;i++)
     {
         pack->datas[i] = datas[i + 2];
-        sum += datas[i + 2];
-    }
-
-    if(sum != datas[i + 2])
-    {
-        ESP_LOGE(BLE_PTC_TAG, "Checksum invalid");
-        return false;
     }
 
     return true;
@@ -61,22 +63,26 @@ bool BLE_PTC_package(uint8_t cmd, const uint8_t* data, uint8_t len, uint8_t* out
     }
 
     uint8_t sum = 0xff;
+    uint8_t i;
     *out_len = 0;
-    out_buf[*out_len] = cmd;
-    sum += cmd;
-    *out_len = *out_len + 1;
-    out_buf[*out_len] = len;
-    sum += len;
-    *out_len = *out_len + 1;
-    for(uint8_t i = 0; i < len; i++)
+
+    uint8_t index = 0;
+    out_buf[index++] = cmd;
+    out_buf[index++] = len;
+
+    for(i = 0; i < len; i++)
     {
-        out_buf[*out_len] = data[i];
-        *out_len = *out_len + 1;
-        sum += data[i];
+        out_buf[index++] = data[i];
     }
 
-    out_buf[*out_len] = sum;
-    *out_len = *out_len + 1;
+    for(i = 0; i < index; i++)
+    {
+        sum += out_buf[i];
+    }
+
+    out_buf[index] = sum;   
+    index++;
+    *out_len = index;
 
     return true;
 }
