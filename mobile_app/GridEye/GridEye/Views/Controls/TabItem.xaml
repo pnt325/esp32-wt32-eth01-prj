@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms" 
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Name="this"
+             x:Class="GridEye.Views.Controls.TabItem">
+    <ContentView.Content>
+        <Frame
+            Padding="5, 0, 5, 0"
+            CornerRadius="0"
+            HasShadow="False"
+            BindingContext="{x:Reference this}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid.Resources>
+                    <Style TargetType="Label">
+                        <Setter Property="Padding" Value="0, 5, 0, 5"/>
+                    </Style>
+                </Grid.Resources>
+                
+                <Label Text="{Binding Title}" FontSize="18"/>
+                <Label Grid.Column="1" HorizontalOptions="End" FontSize="18" x:Name="txtResult" Text="{Binding Result}">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="TapGestureRecognizer_Tapped"/>
+                    </Label.GestureRecognizers>
+                    <Label.Triggers>
+                        <DataTrigger TargetType="Label" Binding="{Binding ResultSelected}" Value="False">
+                            <Setter Property="TextColor" Value="Gray"/>
+                        </DataTrigger>
+                        <DataTrigger TargetType="Label" Binding="{Binding ResultSelected}" Value="True">
+                            <Setter Property="TextColor" Value="{StaticResource colorFriwoForeground}"/>
+                        </DataTrigger>
+                    </Label.Triggers>
+                </Label>
+            </Grid>
+        </Frame>
+    </ContentView.Content>
+</ContentView>

@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:GridEye.Views.Controls"
+             xmlns:locals="clr-namespace:GridEye.ViewModels"
+             x:Class="GridEye.Views.InstallCookerTypePage"
+             NavigationPage.HasNavigationBar="false">
+
+    <ContentPage.BindingContext>
+        <locals:InstallCookerTypePageViewModel x:Name="vm" x:DataType="locals:InstallCookerTypePageViewModel"/>
+    </ContentPage.BindingContext>
+
+    <ContentPage.Resources>
+        <ControlTemplate x:Key="ResponseButton">
+            <StackLayout Orientation="Horizontal" Spacing="10">
+                <StackLayout.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="TextTransform" Value="None"/>
+                        <Setter Property="BackgroundColor" Value="White"/>
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="FontSize" Value="18"/>
+                        <Setter Property="HeightRequest" Value="40"/>
+                        <Setter Property="TextColor" Value="{StaticResource colorFriwoForeground}"/>
+                    </Style>
+                </StackLayout.Resources>
+                <Button Grid.Column="0" Text="Cancel" Clicked="btnCancel_Clicked" HorizontalOptions="CenterAndExpand"/>
+                <Button x:Name="btnOk" IsEnabled="{TemplateBinding BindingContext.OverlayOkEnable}" Grid.Column="1" Text="OK" Clicked="btnOk_Clicked" HorizontalOptions="CenterAndExpand">
+                    <Button.Triggers>
+                        <DataTrigger TargetType="Button" Binding="{Binding Source={x:Reference btnOk}, Path=IsEnabled}" Value="False">
+                            <Setter Property="TextColor" Value="Gray"/>
+                        </DataTrigger>
+                        <DataTrigger TargetType="Button" Binding="{Binding Source={x:Reference btnOk}, Path=IsEnabled}" Value="True">
+                            <Setter Property="TextColor" Value="{StaticResource colorFriwoForeground}"/>
+                        </DataTrigger>
+                    </Button.Triggers>
+                </Button>
+            </StackLayout>
+        </ControlTemplate>
+    </ContentPage.Resources>
+
+    <AbsoluteLayout>
+        <!--main content-->
+        <StackLayout Spacing="0"
+                     AbsoluteLayout.LayoutBounds="0,0,1,1" 
+                     AbsoluteLayout.LayoutFlags="All">
+            <controls:NavigateBarTemplate x:Name="barCtrl" BackEnable="True" BackTitle="Back" NextTitle="Next" HasNext="true" HasBack="True" CaptionTitle="Installation"/>
+            <StackLayout Padding="10">
+                <!--Step content-->
+                <controls:InstallStep StepTitle="Step 1/4" StepDetail="Setting cooker type"/>
+                <!--Title-->
+                <Label Text="Cooker Type" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource colorFriwoForeground}"/>
+                <controls:TabItem Title="Cooker type" Result="{Binding CookerTypeResult, FallbackValue='Choose'}" ResultSelected="true" Tapped="TabItemCookerType_Tapped"/>
+                <controls:TabItem IsVisible="False" Title="Oven" Result="{Binding OvenResult, FallbackValue='Choose'}" ResultSelected="true" Tapped="TabItemOven_Tapped"/>
+            </StackLayout>
+        </StackLayout>
+    
+        <!--Cooker type overlay-->
+        <StackLayout AbsoluteLayout.LayoutBounds="0,0,1,1" 
+                     AbsoluteLayout.LayoutFlags="All"
+                     BackgroundColor="{StaticResource colorDarkTransperent}"
+                     IsVisible="{Binding TypeOverlay}">
+            <Frame VerticalOptions="CenterAndExpand"
+                   HorizontalOptions="CenterAndExpand"
+                   CornerRadius="10"
+                   Padding="10">
+                <StackLayout>
+                    <Label Text="Choose cooker type" FontSize="18" TextColor="{StaticResource colorFriwoForeground}"/>
+                    <RadioButton Content="Gas" CheckedChanged="RadioButtonCookerType_CheckedChanged"/>
+                    <RadioButton Content="Electric" CheckedChanged="RadioButtonCookerType_CheckedChanged"/>
+                    <RadioButton Content="Induction" CheckedChanged="RadioButtonCookerType_CheckedChanged"/>
+                    <BoxView HeightRequest="1" BackgroundColor="Gray"/>
+                    <ContentView ControlTemplate="{StaticResource ResponseButton}"/>
+                </StackLayout>
+                
+            </Frame>
+        </StackLayout>
+        
+        <!--Oven support overylay-->
+        <StackLayout AbsoluteLayout.LayoutBounds="0,0,1,1" 
+                     AbsoluteLayout.LayoutFlags="All"
+                     BackgroundColor="{StaticResource colorDarkTransperent}"
+                     IsVisible="{Binding OvenOverlay}">
+            <Frame VerticalOptions="CenterAndExpand"
+                   HorizontalOptions="CenterAndExpand"
+                   CornerRadius="10"
+                   Padding="10">
+                <StackLayout>
+                    <Label Text="Has oven" FontSize="18" TextColor="{StaticResource colorFriwoForeground}"/>
+                    <RadioButton Content="No" CheckedChanged="RadioButtonOvenType_CheckedChanged"/>
+                    <RadioButton Content="Yes" CheckedChanged="RadioButtonOvenType_CheckedChanged"/>
+                    <BoxView HeightRequest="1" BackgroundColor="Gray"/>
+                    <ContentView ControlTemplate="{StaticResource ResponseButton}"/>
+                </StackLayout>
+
+            </Frame>
+        </StackLayout>
+
+        <StackLayout AbsoluteLayout.LayoutBounds="0,0,1,1" 
+                     AbsoluteLayout.LayoutFlags="All"
+                     BackgroundColor="{StaticResource colorDarkTransperent}"
+                     IsVisible="{Binding ShowProcess}">
+            <ActivityIndicator IsRunning="{Binding ShowProcess}"
+                                   HorizontalOptions="CenterAndExpand"
+                                   VerticalOptions="CenterAndExpand"
+                                   Color="{StaticResource colorFriwoBackground}"/>
+        </StackLayout>
+
+
+    </AbsoluteLayout>
+    
+</ContentPage>

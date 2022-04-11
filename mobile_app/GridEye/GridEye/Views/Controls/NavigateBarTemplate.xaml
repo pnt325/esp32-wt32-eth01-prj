@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms" 
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Name="this"
+             x:Class="GridEye.Views.Controls.NavigateBarTemplate">
+    <ContentView.Content>
+        <Grid MinimumHeightRequest="80" HorizontalOptions="Fill"
+              BindingContext="{x:Reference this}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="100"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid.Resources>
+                <Style TargetType="Label">
+                    <Setter Property="VerticalOptions" Value="Center"/>
+                    <Setter Property="HorizontalOptions" Value="Center"/>
+                    <Setter Property="FontSize" Value="20"/>
+                    <Setter Property="TextColor" Value="{StaticResource colorFriwoForeground}"/>
+                </Style>
+                <Style TargetType="Button">
+                    <Setter Property="BackgroundColor" Value="{StaticResource colorWindowBackground}"/>
+                    <Setter Property="VerticalOptions" Value="Center"/>
+                    <Setter Property="CornerRadius" Value="50"/>
+                    <Setter Property="Padding" Value="5"/>
+                    <Setter Property="TextTransform" Value="None"/>
+                    <Setter Property="HeightRequest" Value="50"/>
+                    <Setter Property="FontSize" Value="18"/>
+                </Style>
+            </Grid.Resources>
+
+            <Button x:Name="btnBack" 
+                    Clicked="btnBack_Clicked"
+                    Grid.Column="0" 
+                    ContentLayout="Left, 0"
+                    Text="{Binding BackTitle}" 
+                    HorizontalOptions="Start"
+                    IsVisible="{Binding HasBack}">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding BackEnable}" Value="True">
+                        <Setter Property="ImageSource" Value="back_icon"/>
+                        <Setter Property="TextColor" Value="{x:StaticResource colorFriwoForeground}"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Button" Binding="{Binding BackEnable}" Value="False">
+                        <Setter Property="ImageSource" Value="back_icon_gray"/>
+                        <Setter Property="TextColor" Value="{x:Static Color.Gray}"/>
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+
+            <Button x:Name="btnNext" 
+                    Clicked="btnNext_Clicked" 
+                    Grid.Column="2" 
+                    Text="{Binding NextTitle}" 
+                    ContentLayout="Right, 0" 
+                    HorizontalOptions="End"
+                    IsVisible="{Binding HasNext}">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding NextEnable}" Value="True">
+                        <Setter Property="ImageSource" Value="next_icon"/>
+                        <Setter Property="TextColor" Value="{x:StaticResource colorFriwoForeground}"/>
+                    </DataTrigger>
+                    <DataTrigger TargetType="Button" Binding="{Binding NextEnable}" Value="False">
+                        <Setter Property="ImageSource" Value="next_icon_gray"/>
+                        <Setter Property="TextColor" Value="{x:Static Color.Gray}"/>
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+
+            <!--bar title-->
+            <Label Text="{Binding CaptionTitle}"
+                   VerticalTextAlignment="Center"
+                   HorizontalTextAlignment="Center"
+                   Grid.Column="1"
+                   FontSize="20" 
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource colorFriwoForeground}"/>
+        </Grid>
+  </ContentView.Content>
+</ContentView>

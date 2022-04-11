@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <color name="launcher_background">#EEEEEE</color>
+  <color name="colorPrimary">#EEEEEE</color>
+  <color name="colorWindowBackground">#fafafa</color>
+  <color name="colorPrimaryDark">#303F9F</color>
+  <color name="colorAccent">#FF4081</color>
+  <color name="colorWelcomeConnect">#005ea8ff</color>
+  <color name="colorFriwoForeground">#1b62b7</color>
+  <color name="colorFriwoBackground">#fcc707</color>
+  <color name="colorFriwoGray">#FF808080</color>
+</resources>

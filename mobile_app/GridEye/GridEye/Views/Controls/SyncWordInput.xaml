@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms" 
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Name="this"
+             x:Class="GridEye.Views.Controls.SyncWordInput">
+            
+    <ContentView.Content>
+        <Frame Padding="5" CornerRadius="0" HasShadow="False"
+               BindingContext="{x:Reference this}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="4*"/>
+                    <ColumnDefinition Width="auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackLayout Grid.Column="0" Orientation="Horizontal" HorizontalOptions="Center">
+                    <StackLayout.Resources>
+                        <Style TargetType="Entry">
+                            <Setter Property="MaxLength" Value="2"/>
+                            <Setter Property="FontSize" Value="18"/>
+                            <Setter Property="HorizontalTextAlignment" Value="Center"/>
+                            <Setter Property="TextTransform" Value="Uppercase"/>
+                            <Setter Property="WidthRequest" Value="40"/>
+                            <Setter Property="IsSpellCheckEnabled" Value="False"/>
+                            <Setter Property="IsTextPredictionEnabled" Value="False"/>
+                        </Style>
+                        <Style TargetType="Frame">
+                            <Setter Property="Padding" Value="2"/>
+                            <Setter Property="HasShadow" Value="False"/>
+                            <Setter Property="CornerRadius" Value="5"/>
+                            <Setter Property="BorderColor" Value="{StaticResource colorWindowBackground}"/>
+                            <Setter Property="VerticalOptions" Value="Center"/>
+                        </Style>
+                    </StackLayout.Resources>
+
+                    <Frame>
+                        <Entry Text="{Binding SyncWord1}" TextChanged="Entry_TextChanged"/>
+                    </Frame>
+                    <Frame>
+                        <Entry Text="{Binding SyncWord2}"/>
+                    </Frame>
+                    <Frame>
+                        <Entry Text="{Binding SyncWord3}"/>
+                    </Frame>
+                    <Frame>
+                        <Entry Text="{Binding SyncWord4}"/>
+                    </Frame>
+                </StackLayout>
+
+                <Frame Grid.Column="1"
+                       Padding="0"
+                       CornerRadius="10"
+                       HasShadow="False"
+                       BorderColor="{StaticResource colorWindowBackground}">
+                    <ImageButton Source="qrcode_scan"
+                                Grid.Column="1"
+                                Clicked="ImageButton_Clicked"
+                                BackgroundColor="White"
+                                Padding="10"/>
+                </Frame>
+
+            </Grid>
+        </Frame>
+    </ContentView.Content>
+</ContentView>

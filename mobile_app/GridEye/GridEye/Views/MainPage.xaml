@@ -1,0 +1,258 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" xmlns:microcharts="clr-namespace:Microcharts.Forms;assembly=Microcharts.Forms"
+             xmlns:controls="clr-namespace:GridEye.Views.Controls"
+             x:Class="GridEye.Views.MainPage"
+             xmlns:vm="clr-namespace:GridEye.ViewModels"
+             NavigationPage.HasNavigationBar="false">
+
+    <ContentPage.BindingContext>
+        <vm:MainPageViewModel x:Name="vmMainPage"/>
+    </ContentPage.BindingContext>
+
+    <ContentPage.Resources>
+        <ControlTemplate x:Key="ResponseButton">
+            <StackLayout Orientation="Horizontal" Spacing="10">
+                <StackLayout.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="TextTransform" Value="None"/>
+                        <Setter Property="BackgroundColor" Value="White"/>
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="FontSize" Value="18"/>
+                        <Setter Property="HeightRequest" Value="40"/>
+                        <Setter Property="TextColor" Value="{StaticResource colorFriwoForeground}"/>
+                    </Style>
+                </StackLayout.Resources>
+                <Button Grid.Column="0" Text="Cancel" Clicked="overlayCancel_Clicked" HorizontalOptions="CenterAndExpand"/>
+                <Button x:Name="btnOk" IsEnabled="{TemplateBinding BindingContext.OverlayOkEnable}" Grid.Column="1" Text="OK" Clicked="overlayOk_Clicked" HorizontalOptions="CenterAndExpand">
+                    <Button.Triggers>
+                        <DataTrigger TargetType="Button" Binding="{Binding Source={x:Reference btnOk}, Path=IsEnabled}" Value="False">
+                            <Setter Property="TextColor" Value="Gray"/>
+                        </DataTrigger>
+                        <DataTrigger TargetType="Button" Binding="{Binding Source={x:Reference btnOk}, Path=IsEnabled}" Value="True">
+                            <Setter Property="TextColor" Value="{StaticResource colorFriwoForeground}"/>
+                        </DataTrigger>
+                    </Button.Triggers>
+                </Button>
+            </StackLayout>
+        </ControlTemplate>
+        
+        <ControlTemplate x:Key="overlayTitleCttp">
+            <Label Text="{TemplateBinding BindingContext.OverlayTitle}" FontSize="18" HorizontalTextAlignment="Start" TextColor="{StaticResource colorFriwoForeground}"/>
+        </ControlTemplate>
+        <ControlTemplate x:Key="overlayTitleResult">
+            <Label Text="{TemplateBinding BindingContext.OverlayTitleResult}" TextColor="Red" FontSize="15"/>
+        </ControlTemplate>
+    </ContentPage.Resources>
+    
+    <AbsoluteLayout>
+        <!--Main content-->
+        <ScrollView VerticalScrollBarVisibility="Never" 
+                    AbsoluteLayout.LayoutBounds="0,0,1,1" 
+                    AbsoluteLayout.LayoutFlags="All">
+            <StackLayout Spacing="10">
+
+                <StackLayout.Resources>
+                    <Style TargetType="Frame">
+                        <Setter Property="Margin" Value="10, 0, 10, 0"/>
+                        <Setter Property="Padding" Value="10"/>
+                        <Setter Property="CornerRadius" Value="5"/>
+                    </Style>
+
+                    <Style TargetType="Label">
+                        <Setter Property="VerticalOptions" Value="Center"/>
+                        <Setter Property="FontSize" Value="Body"/>
+                    </Style>
+
+                    <Style TargetType="Entry">
+                        <Setter Property="FontSize" Value="Body"/>
+                        <Setter Property="VerticalOptions" Value="Center"/>
+                    </Style>
+
+                    <Style TargetType="Button">
+                        <Setter Property="FontSize" Value="Body"/>
+                        <Setter Property="TextTransform" Value="None"/>
+                    </Style>
+
+                    <Style TargetType="RadioButton">
+                        <Setter Property="FontSize" Value="Body"/>
+                    </Style>
+                </StackLayout.Resources>
+
+                <!--<Label Text="WT32-ETH01 Configure" HorizontalTextAlignment="Center" FontSize="Medium"/>-->
+
+                <!--Head of view-->
+                <Grid BackgroundColor="{StaticResource colorFriwoForeground}" Padding="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.Resources>
+                        <Style TargetType="Label">
+                            <Setter Property="TextColor" Value="{StaticResource colorFriwoBackground}"/>
+                        </Style>
+                    </Grid.Resources>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Label Grid.Column="1" Text="WT32-ETH01" FontSize="30" VerticalOptions="Center" FontAttributes="Bold"/>
+                    </Grid>
+                </Grid>
+
+                <!--Connection-->
+                <Frame>
+                    <StackLayout>
+
+                        <!--Connection lable and conneciton optional-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Label Text="Connection" FontSize="Body"/>
+                            <StackLayout Grid.Column="1" Grid.Row="0" Orientation="Horizontal">
+                                <RadioButton x:Name="radio_wifi" Content="WIFI" IsChecked="True"/>
+                                <RadioButton x:Name="radio_eth" Content="ETH"/>
+                            </StackLayout>
+                        </Grid>
+
+                        <!--WIFI configuration-->
+                        <Grid>
+                            <Grid.Triggers>
+                                <DataTrigger TargetType="Grid" Binding="{Binding Source={x:Reference radio_wifi}, Path=IsChecked}" Value="True">
+                                    <Setter Property="IsVisible" Value="True"/>
+                                </DataTrigger>
+                                <DataTrigger TargetType="Grid" Binding="{Binding Source={x:Reference radio_wifi}, Path=IsChecked}" Value="False">
+                                    <Setter Property="IsVisible" Value="False"/>
+                                </DataTrigger>
+                            </Grid.Triggers>
+                            
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+
+                            <Label Text="SSID" Grid.Column="0" Grid.Row="0" HorizontalTextAlignment="End"/>
+                            <Label Text="Password" Grid.Column="0" Grid.Row="1" HorizontalTextAlignment="End"/>
+                            
+                            <Entry Text="" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2"/>
+                            <Entry Grid.Column="1" Grid.Row="1" IsPassword="true" Grid.ColumnSpan="2"/>
+
+                        </Grid>
+                    </StackLayout>
+                </Frame>
+
+                <!--MQTT COnfiguration-->
+                <Frame>
+                    <StackLayout>
+                        <Label Text="MQTT" FontSize="Body"/>
+                        <Grid>
+                            <Label Grid.Column="0" Grid.Row="0" Text="Host" HorizontalTextAlignment="End"/>
+                            <Label Grid.Column="0" Grid.Row="1" Text="Port" HorizontalTextAlignment="End"/>
+                            <Label Grid.Column="0" Grid.Row="2" Text="CA" HorizontalTextAlignment="End"/>
+                            <Entry x:Name="entry_mqtt_host" Text="192.168.0.1" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2"/>
+                            <Entry x:Name="entry_mqtt_port" Text="8883" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan ="2" Keyboard="Numeric"/>
+                            <Entry x:Name="entry_mqtt_ca" Grid.Column="1" Grid.Row="2" IsReadOnly="True" Grid.ColumnSpan="2"/>
+                        </Grid>
+                        <StackLayout Orientation="Horizontal">
+                            <Label Text="URI "/>
+                            <Label>
+                                <Label.Text>
+                                    <MultiBinding StringFormat="mqtts://{0}:{1}">
+                                        <Binding Source="{x:Reference entry_mqtt_host}" Path="Text"/>
+                                        <Binding Source="{x:Reference entry_mqtt_port}" Path="Text"/>
+                                    </MultiBinding>
+                                </Label.Text>
+                            </Label>
+                        </StackLayout>
+                        
+                    </StackLayout>
+                </Frame>
+                
+                <!--Work hour configure-->
+                <Frame>
+                    <StackLayout>
+                        <Label Text="Work hours"/>
+                        <Grid>
+                            <Label Text="Hour 1" Grid.Column="0" Grid.Row="0" HorizontalTextAlignment="End"/>
+                            <Label Text="Hour 2" Grid.Column="0" Grid.Row="1" HorizontalTextAlignment="End"/>
+                            <Label Text="Hour 3" Grid.Column="0" Grid.Row="2" HorizontalTextAlignment="End"/>
+
+                            <Label Text="{Binding Source={x:Reference entry_wh1}, Path=Text, StringFormat='({0}h)'}" Grid.Column="1" Grid.Row="0" HorizontalOptions="Start"/>
+                            <Label Text="{Binding Source={x:Reference entry_wh2}, Path=Text, StringFormat='({0}h)'}" Grid.Column="1" Grid.Row="1" HorizontalOptions="Start"/>
+                            <Label Text="{Binding Source={x:Reference entry_wh3}, Path=Text, StringFormat='({0}h)'}" Grid.Column="1" Grid.Row="2" HorizontalOptions="Start"/>
+
+                            <Entry x:Name="entry_wh1" Text="1.5" Grid.Row="0" Grid.Column="2" Keyboard="Numeric"/>
+                            <Entry x:Name="entry_wh2" Text="2.5" Grid.Row="1" Grid.Column="2" Keyboard="Numeric"/>
+                            <Entry x:Name="entry_wh3" Text="3.5" Grid.Row="2" Grid.Column="2" Keyboard="Numeric"/>
+                        </Grid>
+                    </StackLayout>
+                </Frame>
+                
+                <!--Temperature configuration-->
+                <Frame>
+                    <StackLayout>
+                        <Label Text="Temperature"/>
+                        <Grid>
+                            <Label Text="NTC 1" Grid.Row="0" Grid.Column="1"/>
+                            <Label Text="NTC 2" Grid.Row="1" Grid.Column="1"/>
+                            <Label Text="NTC 3" Grid.Row="2" Grid.Column="1"/>
+
+                            <Label Text="31.5" Grid.Row="0" Grid.Column="2"/>
+                            <Label Text="32.1" Grid.Row="1" Grid.Column="2"/>
+                            <Label Text="30.0" Grid.Row="2" Grid.Column="2"/>
+
+                            <Label Text="Offset" Grid.Row="3" Grid.Column="1"/>
+                            <Entry Text="0.0" Grid.Row="3" Grid.Column="2" Keyboard="Numeric"/>
+                            <Button Text="Preview" Grid.Row="4" Grid.Column="2"/>
+                        </Grid>
+                    </StackLayout>
+                </Frame>
+                
+                <!--Digital input status-->
+                <Frame>
+                    <StackLayout>
+                        <Label Text="Digital Input"/>
+                        <Grid>
+                            <Label Text="Input 1:" Grid.Row="0" Grid.Column="1"/>
+                            <Label Text="Input 2:" Grid.Row="1" Grid.Column="1"/>
+                            <Label Text="Input 2:" Grid.Row="2" Grid.Column="1"/>
+
+                            <Label Text="Active" Grid.Row="0" Grid.Column="2"/>
+                            <Label Text="No-Active" Grid.Row="1" Grid.Column="2"/>
+                            <Label Text="No-Active" Grid.Row="2" Grid.Column="2"/>
+                        </Grid>
+                    </StackLayout>
+                </Frame>
+    
+                <!--Button configuration-->
+                <Frame>
+                    <Button Text="Write Configure" TextTransform="None" HorizontalOptions="End"/>
+                </Frame>
+                
+            </StackLayout>
+        </ScrollView>
+        
+        
+        <!--process overlay-->
+        <StackLayout IsVisible="{Binding ShowProcess}"
+                     AbsoluteLayout.LayoutBounds="0,0,1,1"
+                     AbsoluteLayout.LayoutFlags="All"
+                     BackgroundColor="{StaticResource colorDarkTransperent}">
+            <ActivityIndicator IsRunning="{Binding ShowProcess}"
+                                   HorizontalOptions="CenterAndExpand"
+                                   VerticalOptions="CenterAndExpand"
+                                   Color="{StaticResource colorFriwoBackground}"/>
+        </StackLayout>
+        
+    </AbsoluteLayout>
+</ContentPage>

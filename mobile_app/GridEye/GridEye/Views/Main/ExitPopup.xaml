@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<xct:Popup xmlns="http://xamarin.com/schemas/2014/forms"
+           xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+           xmlns:xct="clr-namespace:Xamarin.CommunityToolkit.UI.Views;assembly=Xamarin.CommunityToolkit"
+           xmlns:local="clr-namespace:GridEye.Views.Main"
+           x:Class="GridEye.Views.Main.ExitPopup"
+           IsLightDismissEnabled="False"
+           Color="Transparent"
+           Size="{x:Static local:PopupSize.Medium}">
+    <StackLayout VerticalOptions="Center">
+        <Frame CornerRadius="10"
+               Padding="10"
+               x:Name="frame"
+               BackgroundColor="{StaticResource colorFriwoBackground}">
+            <StackLayout Spacing="15">
+                <!--Image-->
+                <Image Source="alert_circle" HeightRequest="50"/>
+
+                <!--label-->
+                <Label Text="Do you want to exit app?"
+                       FontSize="20"
+                       TextColor="{StaticResource colorFriwoForeground}"
+                       HorizontalOptions="Center"/>
+
+                <!--button-->
+                <StackLayout Spacing="20" Orientation="Horizontal" HorizontalOptions="Center">
+                    <StackLayout.Resources>
+                        <Style TargetType="Button">
+                            <Setter Property="WidthRequest" Value="100"/>
+                            <Setter Property="HeightRequest" Value="40"/>
+                            <Setter Property="Padding"  Value="0"/>
+                            <Setter Property="HorizontalOptions" Value="Center"/>
+                        </Style>
+                    </StackLayout.Resources>
+
+                    <Button x:Name="btnExit" Text="Cancel" BackgroundColor="White"
+                            TextColor="{StaticResource colorFriwoForeground}"
+                            BorderColor="{StaticResource colorFriwoForeground}"
+                            BorderWidth="2"
+                            CornerRadius="10"
+                            FontSize="18"
+                            Clicked="btnExit_Clicked"/>
+
+                    <Button x:Name="btnOk" Text="Ok" 
+                            BackgroundColor="{StaticResource colorFriwoForeground}"
+                            TextColor="{StaticResource colorFriwoBackground}"
+                            CornerRadius="10"
+                            FontSize="18"
+                            Clicked="btnOk_Clicked"/>
+                </StackLayout>
+            </StackLayout>
+        </Frame>
+    </StackLayout>
+</xct:Popup>

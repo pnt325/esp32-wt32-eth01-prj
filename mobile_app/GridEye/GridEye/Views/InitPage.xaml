@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:GridEye.Views.Controls"
+             x:Class="GridEye.Views.InitPage"
+             NavigationPage.HasNavigationBar="False">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Style x:Key="centerLabel" TargetType="Label">
+                <Setter Property="FontAttributes" Value="Bold"/>
+                <Setter Property="FontSize" Value="20"/>
+                <Setter Property="TextColor" Value="{StaticResource colorFriwoBackground}"/>
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*"/>
+                <RowDefinition Height="1*"/>
+                <RowDefinition Height="1*"/>
+            </Grid.RowDefinitions>
+
+            <!--show label-->
+            <Label  Grid.Row="0"
+                Text="WT32-ETH01"
+                FontSize="40"
+                FontAttributes="Bold"
+                VerticalOptions="Center"
+                HorizontalTextAlignment="Center"
+                TextColor="{StaticResource colorFriwoForeground}"/>
+
+            <Grid Grid.Row="1" HorizontalOptions="Center" VerticalOptions="CenterAndExpand" IsClippedToBounds="True">
+                <Grid.Resources>
+                    <Style TargetType="controls:TextAlignmentButton">
+                        <Setter Property="CornerRadius" Value="30"/>
+                        <Setter Property="TextTransform" Value="None"/>
+                        <Setter Property="BackgroundColor" Value="{StaticResource colorWindowBackground}"/>
+                        <Setter Property="FontSize" Value="20"/>
+                        <Setter Property="TextColor" Value="{StaticResource colorFriwoForeground}"/>
+                        <Setter Property="FontAttributes" Value="Bold"/>
+                        <Setter Property="Padding" Value="15, 0, 15, 0"/>
+                        <Setter Property="ContentLayout" Value="Left, 20"/>
+                    </Style>
+                </Grid.Resources>
+
+                <controls:TextAlignmentButton ImageSource="bluetooth_connect"
+                                          Text="Connect"
+                                          Grid.Row="0"
+                                          Clicked="btnConnect_Clicked"
+                                          HorizontalTextAlignment="Start"/>
+            </Grid>
+
+            <StackLayout Grid.Row="2" VerticalOptions="End" HorizontalOptions="Center" Orientation="Vertical" Padding="10">
+                <!--<Image Source="friwo_logo" HeightRequest="50"/>-->
+                <Label Text="Author: Flavio"
+                   HorizontalTextAlignment="Center"
+                   VerticalTextAlignment="Center"
+                   FontSize="18"
+                   TextColor="{StaticResource colorFriwoForeground}"/>
+            </StackLayout>
+        </Grid>
+    </ScrollView>
+</ContentPage>

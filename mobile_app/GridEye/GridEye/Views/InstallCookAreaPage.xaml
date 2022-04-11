@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:GridEye.Views.Controls"
+             xmlns:sk="clr-namespace:SkiaSharp.Views.Forms;assembly=SkiaSharp.Views.Forms"
+             xmlns:csv ="clr-namespace:GridEye.Views.Crop"
+             x:Class="GridEye.Views.InstallCookAreaPage"
+             Title="Installation"
+             NavigationPage.HasNavigationBar="False">
+    <StackLayout Spacing="0">
+        <controls:NavigateBarTemplate x:Name="navBar" 
+                                      BackTitle="Back" 
+                                      HasBack="True" 
+                                      BackEnable="True" 
+                                      HasNext="True"
+                                      NextEnable="False"
+                                      CaptionTitle="Installation"
+                                      BackClicked="navBar_BackClicked"
+                                      NextClicked="navBar_NextClicked"/>
+        <StackLayout Padding="10">
+            <controls:InstallStep StepTitle="Step 3/4" StepDetail="Cook area and movement area"/>
+            <Grid x:Name="canvasView"/>
+            <Button Text="Configure" TextTransform="None" BackgroundColor="{StaticResource colorWindowBackground}"
+                    FontSize="18"
+                    TextColor="{StaticResource colorFriwoForeground}"
+                    HorizontalOptions="EndAndExpand"
+                    Clicked="ButtonConfigure_Clicked"/>
+        </StackLayout>
+    </StackLayout>
+</ContentPage>
