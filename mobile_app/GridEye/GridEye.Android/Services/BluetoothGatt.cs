@@ -176,6 +176,26 @@ namespace GridEye.Droid.Services
 
             bool ret = false;
             //if (gatt.GetConnectionState(this.device) != ProfileState.Connected)
+            int retry = 0;
+            while(retry > 0)
+            {
+                if (connected)
+                {
+                    characteristic.SetValue(datas);
+                    characteristic.WriteType = GattWriteType.Default;
+                    ret = gatt.WriteCharacteristic(characteristic);
+
+                    if(ret == false)
+                    {
+                        Debug.WriteLine("BLE: Send retry");
+                        retry--;
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
             if(connected)
             {
                 characteristic.SetValue(datas);

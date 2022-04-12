@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
@@ -8,18 +11,49 @@ namespace GridEye.Views
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class MainPage : ContentPage
     {
-        Entry[] pswdEntrys;
-        int pswdEntryIndex = 0;
+        const int CONNECTION_WIFI = 1;
+        const int CONNECTION_ETH = 2;
+
+        bool tempOffsetPreview = false;
+        float tempOffsetVal = 0;
         public MainPage()
         {
             InitializeComponent();
             this.Appearing += MainPage_Appearing;
             this.Disappearing += MainPage_Disappearing;
-            pswdEntrys = new Entry[4];
-            //pswdEntrys[0] = pswdEntry1;
-            //pswdEntrys[1] = pswdEntry2;
-            //pswdEntrys[2] = pswdEntry3;
-            //pswdEntrys[3] = pswdEntry4;
+
+            vmMainPage.WifiSsid = "wifi ssid";
+            vmMainPage.MqttHost = "192.168.0.1";
+            vmMainPage.MqttPort = "8883";
+            vmMainPage.WorkHour1 = "0";
+            vmMainPage.WorkHour2 = "0";
+            vmMainPage.WorkHour3 = "0";
+            vmMainPage.NtcTempOffset = "0";
+            vmMainPage.TempLimit = "95";
+            vmMainPage.CaData = "-----BEGIN CERTIFICATE-----" +
+                                "MIIEBTCCAu2gAwIBAgIUA8HYfkSeRx2l6i3Lhj1fKYRXIbowDQYJKoZIhvcNAQEL" +
+                                "BQAwgZExCzAJBgNVBAYTAlZOMRQwEgYDVQQIDAtIbyBDaGkgTWluaDEQMA4GA1UE" +
+                                "BwwHVGh1IER1YzEPMA0GA1UECgwGQ0EgUG50MQ0wCwYDVQQLDARUZXN0MRYwFAYD" +
+                                "VQQDDA0xOTIuMTY4LjAuMTA1MSIwIAYJKoZIhvcNAQkBFhNwaGF0Lm50QGhvdG1h" +
+                                "aWwuY29tMB4XDTIyMDQwOTE3MTMxN1oXDTMyMDQwNjE3MTMxN1owgZExCzAJBgNV" +
+                                "BAYTAlZOMRQwEgYDVQQIDAtIbyBDaGkgTWluaDEQMA4GA1UEBwwHVGh1IER1YzEP" +
+                                "MA0GA1UECgwGQ0EgUG50MQ0wCwYDVQQLDARUZXN0MRYwFAYDVQQDDA0xOTIuMTY4" +
+                                "LjAuMTA1MSIwIAYJKoZIhvcNAQkBFhNwaGF0Lm50QGhvdG1haWwuY29tMIIBIjAN" +
+                                "BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqcp7wq3YRaeA5RHaVWQEoyC0GwFo" +
+                                "Ahn5RNKQvreUgDqn0His6qbHLjNGv1wwMeLLBpnuuPlP + SssliEpp2jAWL564zC7" +
+                                "muxOcxWG6q7HvzNkAXNlBmCSBUaCwKvg + F5kA8QI3WiQlGwyAqqK9KS / QswZUEs0" +
+                                "LQQhJqh9MK1tGTn8qblWQh6ZgXVO0PjxGSsFnNyCQc0Surukoba5sm3PDG / sdCc +" +
+                                "w6BodQiFjFdlaeYyM17l1bkXH5b35Knje9rtVwiTb1sf8MXHppSh2xZpqu2m6SI /" +
+                                "Fr2ZWGlq2grsTp6lfvXJr1u / G4KhdsKWZpvBmVZIX1RGWXRU864yw0VIywIDAQAB" +
+                                "o1MwUTAdBgNVHQ4EFgQUCLDafQSD7l7SsUsGMvNHjjKsabAwHwYDVR0jBBgwFoAU" +
+                                "CLDafQSD7l7SsUsGMvNHjjKsabAwDwYDVR0TAQH / BAUwAwEB / zANBgkqhkiG9w0B" +
+                                "AQsFAAOCAQEANZQbhOIiAtE1H1BFsTFMwNmH7QQT5Vndc1yGOC2hLzKmzDGrup + 3" +
+                                "S5W8DMGxyyDH0jSG1I0HNY + xYAGyR / fuTBOp + lwaMQAOS0P8YAo1OcE / Exl8ZfXJ" +
+                                "0dcM9lb / xPYQxKFyfTOeHMCa2QUAXh5iSr24yJo5Pf / Yxy7LP0dJYZrAeFiLY4pb" +
+                                "ZCjRb7GdgNT64GjxBHkX93dqVX + lX1Z / BgLJp2mWoFqdOjjJD4cbZYfm1SqiFFC8" +
+                                "j6U8I6aBJx9iHFZug / 1FQIWO5KeX++bhLH8VlcQ5 / sCK + ENArlHRsk88JvWs9578" +
+                                "2mzGHMYBWaUYMYtvPsQ1AFSIhPO0S / 9PMw ==" +
+                                  "-----END CERTIFICATE-----";
         }
 
         private void MainPage_Disappearing(object sender, EventArgs e)
@@ -29,195 +63,71 @@ namespace GridEye.Views
 
         private void BleProtocol_Received(object sender, Protocol.Packet packet)
         {
-            Debug.WriteLine($"Received data cmd: {packet.Cmd}, len: {packet.Length}");
-            return;
-
+            // TODO handle data recieved
             switch (packet.Cmd)
             {
                 case Protocol.Command.BLE_CMD_NONE:
                     break;
-                case Protocol.Command.BLE_CMD_INVALID:
-                    break;
-                case Protocol.Command.BLE_CMD_RF_SYNC:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMPERATURE_SCAN:
-                    break;
-                case Protocol.Command.BLE_CMD_MODE:
-                    break;
-                case Protocol.Command.BLE_CMD_STOVE_TYPE:
-                    break;
-                case Protocol.Command.BLE_CMD_SMOKE_SYNC:
-                    break;
-                case Protocol.Command.BLE_CMD_COOK_AREA:
-                    break;
-                case Protocol.Command.BLE_CMD_SAVE_CONFIG:
-                    break;
-                case Protocol.Command.BLE_CMD_SETUP:
+                case Protocol.Command.BLE_CMD_ACK:
+                    if(onWriteConfigure)
                     {
-                        requestSetting = false;
-                        vmMainPage.ShowProcess = false; 
-                        if (packet.Type == Protocol.PacketType.Ack)
-                        {
-                            this.Dispatcher.BeginInvokeOnMainThread(async () =>
-                            {
-                                await Navigation.PushAsync(new Views.SettingPage());
-                            });
-                        }
-                        else
-                        {
-                            this.Dispatcher.BeginInvokeOnMainThread(() =>
-                            {
-                                var toast = DependencyService.Get<Services.IToast>();
-                                toast.Show("Enter setup failure");
-                            });
-                        }
-                        break;
+                        waitCmd = Protocol.Command.BLE_CMD_ACK;
                     }
-                case Protocol.Command.BLE_CMD_MAIN_INFO:
                     break;
-                case Protocol.Command.BLE_CMD_SENSOR_INFO:
+                case Protocol.Command.BLE_CMD_NACK:
+                    if(onWriteConfigure)
                     {
-                        if(packet.Type == Protocol.PacketType.Nack)
-                        {
-                            var toast = DependencyService.Get<Services.IToast>();
-                            toast.Show("Sensor info failure");
-                            break;
-                        }
-                        if(packet.Type != Protocol.PacketType.Data)
-                        {
-                            break;
-                        }
-
-                        var sensorInfo = new Protocol.Data.SensorInfo();
-                        if (!sensorInfo.Parse(packet.Data, packet.Length))
-                        {
-                            break;
-                        }
-
-                        // Update system
-                        if(sensorInfo.SyncMode == Protocol.Data.State.SyncMode.Main)
-                        {
-                            vmMainPage.System = "Main";
-                        }
-                        else if(sensorInfo.SyncMode == Protocol.Data.State.SyncMode.Smoke)
-                        {
-                            vmMainPage.System = "Main_Smoke";
-                        }
-                        else
-                        {
-                            vmMainPage.System = "None";
-                        }
-
-                        vmMainPage.Battery = sensorInfo.BatteryCapacity;
-                        vmMainPage.Mode = sensorInfo.Mode.ToString();
-                        if(sensorInfo.Mode == Protocol.Data.State.AppMode.System && sensorInfo.TaskState != Protocol.Data.State.TaskState.Failure)
-                        {
-                            vmMainPage.LockEnable = true;
-                        }
-                        else
-                        {
-                            vmMainPage.LockEnable = false;
-                        }
-
-                        // Update temperature chart/
-                        vmMainPage.Temperature = sensorInfo.Temperature;
-                        vmMainPage.TaskState = sensorInfo.TaskState.ToString();
-                        vmMainPage.SafeProfile = sensorInfo.SafeProfile.ToString();
-                        break;
+                        waitCmd = Protocol.Command.BLE_CMD_NACK;
                     }
-                case Protocol.Command.BLE_CMD_STOVE_LOCK:
+                    break;
+                case Protocol.Command.BLE_CMD_CONFIG_COMMIT:
+                    break;
+                case Protocol.Command.BLE_CMD_WIFI_SSID:
+                    break;
+                case Protocol.Command.BLE_CMD_WIFI_PASSWORD:
+                    break;
+                case Protocol.Command.BLE_CMD_MQTT_PORT:
+                    break;
+                case Protocol.Command.BLE_CMD_MQTT_HOST:
+                    break;
+                case Protocol.Command.BLE_CMD_MQTT_CA_BEGIN:
+                    break;
+                case Protocol.Command.BLE_CMD_MQTT_CA_DATA:
+                    break;
+                case Protocol.Command.BLE_CMD_MQTT_CA_END:
+                    break;
+                case Protocol.Command.BLE_CMD_TEMP_OFFSET:
+                    break;
+                case Protocol.Command.BLE_CMD_TEMP_LIMIT:
+                    break;
+                case Protocol.Command.BLE_CMD_CONNECTION:
+                    break;
+                case Protocol.Command.BLE_CMD_PROBE_TEMP:
                     {
-                        if(packet.Type == Protocol.PacketType.Nack)
+                        Protocol.Data.Temperature temp = new Protocol.Data.Temperature();
+                        if(temp.Parse(packet.Data, packet.Length))
                         {
-                            if(vmMainPage.LockOverlay)
+                            if(tempOffsetPreview)
                             {
-                                ShowOverlayTitleResult("Password failure");
+                                temp.Values[0] = temp.Values[0] + tempOffsetVal;
+                                temp.Values[1] = temp.Values[1] + tempOffsetVal;
+                                temp.Values[2] = temp.Values[2] + tempOffsetVal;
                             }
-                            else
-                            {
-                                var toast = DependencyService.Get<Services.IToast>();
-                                toast.Show("Stove lock failure");
-                            }
-                            break;  
-                        }
 
-                        var stoveLock = new Protocol.Data.StoveLock();
-                        if(!stoveLock.Parse(packet.Data, packet.Length))
-                        {
-                            System.Diagnostics.Debug.WriteLine("Packet parse failure", "BLE_RECV");
-                            break;  
-                        }
-
-                        switchUpdate = true;
-                        vmMainPage.StoveLock = stoveLock.Lock;
-                        if(vmMainPage.LockOverlay)
-                        {
-                            vmMainPage.LockOverlay = false;
+                            vmMainPage.NtcTemp1 = temp.Values[0].ToString();
+                            vmMainPage.NtcTemp2 = temp.Values[1].ToString();
+                            vmMainPage.NtcTemp3 = temp.Values[2].ToString();
                         }
                     }
                     break;
-                case Protocol.Command.BLE_CMD_SAFE_PROFILE:
+                case Protocol.Command.BLE_CMD_PROBE_DI:
                     {
-                        if(packet.Type != Protocol.PacketType.Ack)
+                        Protocol.Data.Digital di = new Protocol.Data.Digital();
+                        if(di.Parse(packet.Data, packet.Length))
                         {
-                            if (vmMainPage.ProfileOverlay)
-                            {
-                                ShowOverlayTitleResult("Profile invalid");
-                                vmMainPage.OverlayOkEnable = true;
-                            }
-                            break;
-                        }
-
-                        if (vmMainPage.ProfileOverlay)
-                        {
-                            vmMainPage.ProfileOverlay = false;
-                        }
-                        vmMainPage.SafeProfile = safeProfile.ToString();
-                    }
-                    break;
-                case Protocol.Command.BLE_CMD_MOVE_DATA:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_0:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_1:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_2:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_3:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_4:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_5:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_6:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_7:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_8:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_9:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_10:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_11:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_12:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_13:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_14:
-                    break;
-                case Protocol.Command.BLE_CMD_TEMP_ROW_15:
-                    break;
-                case Protocol.Command.BLE_CMD_SAFE_ENHANCE:
-                    break;
-                case Protocol.Command.BLE_CMD_HUMAN_AREA:
-                    {
-                        var humanarea = new Protocol.Data.HumanDetect();
-                        if(!humanarea.Parse(packet.Data, packet.Length))
-                        {
-                            //TODO get human detected
-                            break;
+                            vmMainPage.DiInput1 = (di.Values[0] == false) ? "Active" : "No-Active";
+                            vmMainPage.DiInput2 = (di.Values[1] == false) ? "Active" : "No-Active";
+                            vmMainPage.DiInput3 = (di.Values[2] == false) ? "Active" : "No-Active";
                         }
                     }
                     break;
@@ -229,25 +139,7 @@ namespace GridEye.Views
         private void MainPage_Appearing(object sender, EventArgs e)
         {
             App.BleProtocol.Received += BleProtocol_Received;
-            App.BleProtocol.Send(Protocol.Command.BLE_CMD_SENSOR_INFO, Protocol.PacketType.Ack, null, 0);
-        }
-
-        bool requestSetting = false;
-        private void btnSetting_Clicked(object sender, EventArgs e)
-        {
-            if(requestSetting)
-            {
-                return;
-            }
-            vmMainPage.ShowProcess = true;
-            Protocol.Data.Setup setup = new Protocol.Data.Setup { Enable = true };
-            App.BleProtocol.Send(Protocol.Command.BLE_CMD_SETUP, Protocol.PacketType.Data, setup.GetBytes(), setup.GetLength());
-            requestSetting = true;
-        }
-
-        private void btnExit_Clicked(object sender, EventArgs e)
-        {
-            BackToInit.Verify();
+            // App.BleProtocol.Send(Protocol.Command.BLE_CMD_SENSOR_INFO, Protocol.PacketType.Ack, null, 0);
         }
 
         protected override bool OnBackButtonPressed()
@@ -256,170 +148,308 @@ namespace GridEye.Views
             return true;
         }
 
-        private void TapGestureRecognizerSafeProfile_Tapped(object sender, EventArgs e)
+        int conneciton = 0;
+        private void radio_wifi_CheckedChanged(object sender, CheckedChangedEventArgs e)
         {
-            vmMainPage.OverlayTitle = "Choose safe profile";
-            ShowOverlayTitleResult("");
-            vmMainPage.ProfileOverlay = true;
-        }
-
-        bool switchUpdate = false;
-        private void switchStoveLock_Toggled(object sender, ToggledEventArgs e)
-        {
-            if(switchUpdate)
+            RadioButton rbtn = sender as RadioButton;
+            if(rbtn == radio_wifi && rbtn.IsChecked)
             {
-                switchUpdate = false;
-                return;
+                conneciton = CONNECTION_WIFI;
+                Debug.WriteLine("Set conection: WIFI");
             }
-
-            vmMainPage.LockOverlay = true;
-            ShowOverlayTitleResult("");
-            for (int i = 0; i < pswdEntrys.Length; i++)
+            if (rbtn == radio_eth && rbtn.IsChecked)
             {
-                pswdEntrys[i].Text = "";
-            }
-            pswdEntryIndex = 0;
-            pswdEntrys[pswdEntryIndex].Focus();
-            vmMainPage.OverlayTitle = e.Value ? "Unlock password" : "Lock password";
-        }
-
-        private void ShowOverlayTitleResult(string title)
-        {
-            if(string.IsNullOrEmpty(title))
-            {
-                vmMainPage.OverlayTitleResultVisible = false;
-                return;
-            }
-            vmMainPage.OverlayTitleResultVisible = true;
-            vmMainPage.OverlayTitleResult = title;  
-        }
-
-        private void overlayCancel_Clicked(object sender, EventArgs e)
-        {
-            if(vmMainPage.LockOverlay)
-            {
-                switchUpdate = true;
-                vmMainPage.StoveLock = !vmMainPage.StoveLock;
-            }
-
-            vmMainPage.LockOverlay = false;
-            vmMainPage.ProfileOverlay = false;
-            vmMainPage.OverlayOkEnable = false;
-        }
-
-        private void overlayOk_Clicked(object sender, EventArgs e)
-        {
-            if (vmMainPage.LockOverlay)
-            {
-                //TODO implement send password to main.
-            }
-
-            if (vmMainPage.ProfileOverlay)
-            {
-                Protocol.Data.SafeProfile safeProfile = new Protocol.Data.SafeProfile { Profile = this.safeProfile };
-                vmMainPage.OverlayOkEnable = false; 
-                App.BleProtocol.Send(Protocol.Command.BLE_CMD_SAFE_PROFILE, Protocol.PacketType.Data, safeProfile.GetBytes(), safeProfile.GetLength());
+                Debug.WriteLine("Set conection: ETH");
+                conneciton = CONNECTION_ETH;
             }
         }
 
-        private void Entry_TextChanged(object sender, TextChangedEventArgs e)
+        private void btnTempOffset_Clicked(object sender, EventArgs e)
         {
-            Entry entry = sender as Entry;
-            if(string.IsNullOrEmpty(e.NewTextValue))
+            tempOffsetPreview = true;
+            try
             {
-                return;
+                float offset = float.Parse(vmMainPage.NtcTempOffset);
+                tempOffsetVal = offset;
             }
-
-            char c = (char)e.NewTextValue[0];
-            if(c < '0' && c > '9')
+            catch
             {
-                entry.Text = e.OldTextValue;
-                return;
+                tempOffsetPreview = false;
+                var toast = DependencyService.Get<Services.IToast>();
+                toast.Show("Temperature offset invalid");
             }
+        }
 
-            if (!string.IsNullOrEmpty(e.NewTextValue))
+        private void btnWriteConfig_Clicked(object sender, EventArgs e)
+        {
+            //! check connection
+            if(conneciton == 1)
             {
-                if (pswdEntryIndex < 3)
+                if(string.IsNullOrEmpty(vmMainPage.WifiSsid) || string.IsNullOrEmpty(vmMainPage.WifiPassword))
                 {
-                    pswdEntryIndex++;
-                    pswdEntrys[pswdEntryIndex].Focus();
+                    showItoast("WIFI configure invalid");
+                    return;
                 }
             }
 
-            int i;
-            for (i = 0; i < pswdEntrys.Length; i++)
+            //! check MQTT
+            if(string.IsNullOrEmpty(vmMainPage.MqttHost) || string.IsNullOrEmpty(vmMainPage.MqttPort) ||
+                string.IsNullOrEmpty(vmMainPage.CaData))
             {
-                if (string.IsNullOrEmpty(pswdEntrys[i].Text))
+                showItoast("MQTT configure invalid");
+                return;
+            }
+
+            //! Work hour
+            float[] work_hours = new float[3];
+            try
+            {
+                work_hours[0] = float.Parse(vmMainPage.WorkHour1);
+                work_hours[1] = float.Parse(vmMainPage.WorkHour2);
+                work_hours[2] = float.Parse(vmMainPage.WorkHour3);
+            }
+            catch (Exception)
+            {
+                showItoast("Work hour data invalid");
+                return;
+            }
+
+            // Temperature
+            float tempOffset;
+            float tempLimit;
+
+            try
+            {
+                tempOffset = float.Parse(vmMainPage.NtcTempOffset);
+                tempLimit = float.Parse(vmMainPage.TempLimit); 
+            }
+            catch (Exception)
+            {
+                showItoast("Tmeperature configure invlaid");
+                return;
+            }
+
+            //! start write data
+            vmMainPage.ShowProcess = true;
+            writeConfigureProcess(work_hours, tempOffset, tempLimit);
+        }
+
+        //EventWaitHandle eventWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+        Protocol.Command waitCmd = Protocol.Command.BLE_CMD_ACK;
+        bool onWriteConfigure = false;
+        private void writeConfigureProcess(float[] work_hour, float tempOffet, float tempLimit)
+        {
+            Task.Run(() =>
+            {
+                //onWriteConfigure = true;
+                while (true)
+                {
+                    // Write connection
+                    if (sendConfig(Protocol.Command.BLE_CMD_CONNECTION, new byte[] { (byte)conneciton }, 1) == false)
+                    {
+                        break;
+                    }
+
+                    // Write wifi connection
+                    if (conneciton == CONNECTION_WIFI)
+                    {
+                        // SSID
+                        byte[] ssid = Encoding.UTF8.GetBytes(vmMainPage.WifiSsid);
+                        if (sendConfig(Protocol.Command.BLE_CMD_WIFI_SSID, ssid, ssid.Length) == false)
+                        {
+                            break;
+                        }
+
+                        // Password
+                        byte[] pswd = Encoding.UTF8.GetBytes(vmMainPage.WifiPassword);
+                        if (sendConfig(Protocol.Command.BLE_CMD_WIFI_PASSWORD, pswd, pswd.Length) == false)
+                        {
+                            break;
+                        }
+                    }
+
+                    // MQTT host, uri
+                    string uri = $"mqtts//:{vmMainPage.MqttHost}:{vmMainPage.MqttPort}";
+                    var uri_data = Encoding.UTF8.GetBytes(uri);
+                    if (sendConfig(Protocol.Command.BLE_CMD_MQTT_HOST, uri_data, uri.Length) == false)
+                    {
+                        break;
+                    }
+
+                    // MQTT CA data
+                    if (sendConfig(Protocol.Command.BLE_CMD_MQTT_CA_BEGIN, null, 0) == false)
+                    {
+                        break;
+                    }
+
+                    byte[] ca_data = Encoding.UTF8.GetBytes(vmMainPage.CaData);
+                    int index = 0;
+                    bool err = false;
+
+                    byte[] send_buf = new byte[Protocol.Protocol.DATA_SIZE_MAX];
+                    while (true)
+                    {
+                        int len = ca_data.Length - index;
+                        if (len > Protocol.Protocol.DATA_SIZE_MAX)
+                        {
+                            len = Protocol.Protocol.DATA_SIZE_MAX;
+                        }
+
+                        if (len == 0)
+                        {
+                            break;
+                        }
+
+                        for (int i = 0; i < len; i++)
+                        {
+                            send_buf[i] = ca_data[index++];
+                        }
+
+                        if (sendConfig(Protocol.Command.BLE_CMD_MQTT_CA_DATA, send_buf, len) == false)
+                        {
+                            err = true;
+                            break;
+                        }
+
+                        if (len < Protocol.Protocol.DATA_SIZE_MAX)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (err)
+                    {
+                        break;
+                    }
+
+                    if (sendConfig(Protocol.Command.BLE_CMD_MQTT_CA_END, null, 0) == false)
+                    {
+                        break;
+                    }
+
+                    // Work hour
+                    UInt32[] sec = new UInt32[3];
+                    sec[0] = (UInt32)(float.Parse(vmMainPage.WorkHour1) * 3600);
+                    sec[1] = (UInt32)(float.Parse(vmMainPage.WorkHour2) * 3600);
+                    sec[2] = (UInt32)(float.Parse(vmMainPage.WorkHour3) * 3600);
+
+                    byte[] work_data = new byte[4 * 3];
+                    for (int i = 0; i < 4; i += 4)
+                    {
+                        var tmp = BitConverter.GetBytes(sec[i]);
+                        work_data[i + 0] = tmp[0];
+                        work_data[i + 1] = tmp[1];
+                        work_data[i + 2] = tmp[2];
+                        work_data[i + 3] = tmp[3];
+                    }
+
+                    if (sendConfig(Protocol.Command.BLE_CMD_WORK_HOUR, work_data, work_data.Length) == false)
+                    {
+                        break;
+                    }
+
+                    // Temp offset
+                    byte[] toffset_data = BitConverter.GetBytes(float.Parse(vmMainPage.NtcTempOffset));
+                    if (sendConfig(Protocol.Command.BLE_CMD_TEMP_OFFSET, toffset_data, toffset_data.Length) == false)
+                    {
+                        break;
+                    }
+
+                    // Temp Limit
+                    byte[] tlimit_data = BitConverter.GetBytes(float.Parse(vmMainPage.TempLimit));
+                    if (sendConfig(Protocol.Command.BLE_CMD_TEMP_LIMIT, tlimit_data, tlimit_data.Length) == false)
+                    {
+                        break;
+                    }
+
+                    vmMainPage.ShowProcess = false;
+                    showItoastSafe("Write Configure success");
+                    break;
+            }
+
+                onWriteConfigure = false;
+            });
+        }
+
+        private bool sendConfig(Protocol.Command cmd, byte[] data, int len)
+        {
+            onWriteConfigure = true;
+            if(App.BleProtocol.Send(cmd, data, len) == false)
+            {
+                showItoastSafe("BLE send error");
+                vmMainPage.ShowProcess = false;
+                onWriteConfigure = false;
+                return false;
+            }
+
+            waitCmd = Protocol.Command.BLE_CMD_NONE;
+
+            int time_out = 0;
+            while(true)
+            {
+                if(waitCmd != Protocol.Command.BLE_CMD_NONE)
                 {
                     break;
                 }
-            }
-            
-            if(i >= pswdEntrys.Length)
-            {
-                vmMainPage.OverlayOkEnable = true;
-            }
-            else
-            {
-                vmMainPage.OverlayOkEnable = false;
-            }
-        }
+                Thread.Sleep(10);
+                time_out += 10;
 
-        private void pswdEntry1_Focused(object sender, FocusEventArgs e)
-        {
-            Entry en = sender as Entry;
-            for (int i = 0; i < pswdEntrys.Length; i++)
-            {
-                if(en == pswdEntrys[i])
+                if(time_out >= 1000)
                 {
-                    pswdEntryIndex = i;
-                    if (en.Text != null)
-                    {
-                        en.CursorPosition = 0;
-                        en.SelectionLength = 1;
-                    }
-
-                    if(vmMainPage.OverlayTitleResultVisible)
-                    {
-                        ShowOverlayTitleResult("");
-                    }
-                    break;
+                    Debug.WriteLine("Config write timeout");
+                    vmMainPage.ShowProcess = false;
+                    showItoastSafe($"Write {cmd} timeout");
+                    return false;
                 }
             }
+
+            if (waitCmd == Protocol.Command.BLE_CMD_NACK)
+            {
+                onWriteConfigure = false;
+                vmMainPage.ShowProcess = false;
+                showItoastSafe($"Write {cmd} failure");
+                return false;
+            }
+
+            //eventWaitHandle.Reset();
+            //if (eventWaitHandle.WaitOne(500) == false)
+            //{
+            //    vmMainPage.ShowProcess = false;
+            //    onWriteConfigure = false;
+            //    showItoastSafe($"Write {cmd} timeout");
+            //    return false;
+            //}
+            //else
+            //{
+            //    if (waitCmd == Protocol.Command.BLE_CMD_NACK)
+            //    {
+            //        onWriteConfigure = false;
+            //        vmMainPage.ShowProcess = false;
+            //        showItoastSafe($"Write {cmd} failure");
+            //        return false;
+            //    }
+            //}
+
+            Debug.WriteLine($"Config CMD: {cmd}");
+            return true;
         }
 
-        bool profileUpdate = false;
-        Protocol.Data.State.SafeProfile safeProfile;
-        private void RadioButton_CheckedChanged(object sender, CheckedChangedEventArgs e)
+        private void showItoast(string msg)
         {
-            if(profileUpdate)
+            Debug.WriteLine($"Toast message: {msg}");
+            var toast = DependencyService.Get<Services.IToast>();
+            if(toast != null)
             {
-                profileUpdate = false;
-                return;
+                toast.Show(msg);
             }
+        }
 
-            RadioButton rb = sender as RadioButton;
-            if(rb.Content.ToString() == Protocol.Data.State.SafeProfile.Normal.ToString())
+        private void showItoastSafe(string msg)
+        {
+            Dispatcher.BeginInvokeOnMainThread(() =>
             {
-                safeProfile = Protocol.Data.State.SafeProfile.Normal;
-            }
-            else if(rb.Content.ToString() == Protocol.Data.State.SafeProfile.Medium.ToString())
-            {
-                safeProfile = Protocol.Data.State.SafeProfile.Medium;
-            }
-            else if(rb.Content.ToString() == Protocol.Data.State.SafeProfile.High.ToString())
-            {
-                safeProfile = Protocol.Data.State.SafeProfile.High;
-            }
-
-            if(rb.Content.ToString() != vmMainPage.SafeProfile)
-            {
-                vmMainPage.OverlayOkEnable = true;
-            }
-            else
-            {
-                vmMainPage.OverlayOkEnable = false;
-            }
+                showItoast(msg);
+            });
         }
     }
 }

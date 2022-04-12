@@ -119,7 +119,7 @@ namespace GridEye.Views
                 {
                     if (this.forInstall)
                     {
-                        await Navigation.PushAsync(new Views.InstallCookerTypePage());
+                        // Do nothing
                     }
                     else
                     {

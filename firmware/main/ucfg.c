@@ -156,7 +156,7 @@ bool UCFG_write_mqtt_host(uint8_t* data, uint8_t len)
         ESP_ERROR_CHECK(ESP_FAIL);
     }
 
-    if(strlen((const char*) data) != len)
+    if(strlen((const char*)data) != len)
     {
         ESP_ERROR_CHECK(ESP_FAIL);
     }
@@ -243,9 +243,10 @@ bool UCFG_read_connection(uint8_t* value)
     return (ret == ESP_OK);
 }
 
-bool UCFG_write_mqtt_ca(uint8_t* data, uint8_t len)
+bool UCFG_write_mqtt_ca(uint8_t* data, uint16_t len)
 {
-    if(data == NULL || strlen((const char*)data) != len)
+    ESP_LOGI(UCFG_TAG, "CA data_len: %d, len: %d", strlen((const char*)data), len);
+    if(data == NULL)
     {
         ESP_ERROR_CHECK(ESP_FAIL);
     }

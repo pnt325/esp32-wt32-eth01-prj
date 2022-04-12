@@ -8,6 +8,7 @@ namespace GridEye.Protocol
     public class Protocol
     {
         public const int DATA_SIZE_MIN = 3;
+        public const int DATA_SIZE_MAX = 128;
         public event ProtocolReceivedEventHandler Received;
 
         public Protocol(Services.IBluetoothGatt gatt)
@@ -15,9 +16,9 @@ namespace GridEye.Protocol
             gatt.Received += Gatt_Received;
         }
 
-        public bool Send(Command cmd, PacketType type, byte[] data, int length)
+        public bool Send(Command cmd, byte[] data, int length)
         {
-            if ((data == null && length != 0) || (data != null && length > data.Length))
+            if ((data == null && length != 0) || (data != null && length > data.Length) || length > DATA_SIZE_MAX)
             {
                 return false;
             }

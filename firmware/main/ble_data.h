@@ -27,6 +27,7 @@ enum {
     BLE_CMD_CONNECTION,             // connecion type value.
     BLE_CMD_PROBE_TEMP,             // temperature
     BLE_CMD_PROBE_DI,               // digital status
+    BLE_CMD_WORK_HOUR,              // Set new work-hour
 };
 
  #endif /*_BLE_DATA_H_*/

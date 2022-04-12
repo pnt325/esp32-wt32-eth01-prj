@@ -13,6 +13,7 @@
   * Max packet size: 128 bytes
   */
 
+#include <string.h>
 #include "ble_ptc.h"
 #include "esp_log.h"
 
@@ -24,6 +25,8 @@ bool BLE_PTC_parse(const uint8_t* datas, uint8_t len, ble_pack_t* pack)
         ESP_LOGE(BLE_PTC_TAG, "Input param null");
         return false;
     }
+
+    memset(pack->datas, 0x00, BLE_PTC_DATA_SIZE);
 
     pack->cmd = datas[0];
     pack->len = datas[1];

@@ -11,38 +11,6 @@
     </ContentPage.BindingContext>
 
     <ContentPage.Resources>
-        <ControlTemplate x:Key="ResponseButton">
-            <StackLayout Orientation="Horizontal" Spacing="10">
-                <StackLayout.Resources>
-                    <Style TargetType="Button">
-                        <Setter Property="TextTransform" Value="None"/>
-                        <Setter Property="BackgroundColor" Value="White"/>
-                        <Setter Property="Padding" Value="0"/>
-                        <Setter Property="FontSize" Value="18"/>
-                        <Setter Property="HeightRequest" Value="40"/>
-                        <Setter Property="TextColor" Value="{StaticResource colorFriwoForeground}"/>
-                    </Style>
-                </StackLayout.Resources>
-                <Button Grid.Column="0" Text="Cancel" Clicked="overlayCancel_Clicked" HorizontalOptions="CenterAndExpand"/>
-                <Button x:Name="btnOk" IsEnabled="{TemplateBinding BindingContext.OverlayOkEnable}" Grid.Column="1" Text="OK" Clicked="overlayOk_Clicked" HorizontalOptions="CenterAndExpand">
-                    <Button.Triggers>
-                        <DataTrigger TargetType="Button" Binding="{Binding Source={x:Reference btnOk}, Path=IsEnabled}" Value="False">
-                            <Setter Property="TextColor" Value="Gray"/>
-                        </DataTrigger>
-                        <DataTrigger TargetType="Button" Binding="{Binding Source={x:Reference btnOk}, Path=IsEnabled}" Value="True">
-                            <Setter Property="TextColor" Value="{StaticResource colorFriwoForeground}"/>
-                        </DataTrigger>
-                    </Button.Triggers>
-                </Button>
-            </StackLayout>
-        </ControlTemplate>
-        
-        <ControlTemplate x:Key="overlayTitleCttp">
-            <Label Text="{TemplateBinding BindingContext.OverlayTitle}" FontSize="18" HorizontalTextAlignment="Start" TextColor="{StaticResource colorFriwoForeground}"/>
-        </ControlTemplate>
-        <ControlTemplate x:Key="overlayTitleResult">
-            <Label Text="{TemplateBinding BindingContext.OverlayTitleResult}" TextColor="Red" FontSize="15"/>
-        </ControlTemplate>
     </ContentPage.Resources>
     
     <AbsoluteLayout>
@@ -51,7 +19,8 @@
                     AbsoluteLayout.LayoutBounds="0,0,1,1" 
                     AbsoluteLayout.LayoutFlags="All">
             <StackLayout Spacing="10">
-
+                   
+                <!--Resource define-->
                 <StackLayout.Resources>
                     <Style TargetType="Frame">
                         <Setter Property="Margin" Value="10, 0, 10, 0"/>
@@ -116,8 +85,8 @@
                             </Grid.ColumnDefinitions>
                             <Label Text="Connection" FontSize="Body"/>
                             <StackLayout Grid.Column="1" Grid.Row="0" Orientation="Horizontal">
-                                <RadioButton x:Name="radio_wifi" Content="WIFI" IsChecked="True"/>
-                                <RadioButton x:Name="radio_eth" Content="ETH"/>
+                                <RadioButton x:Name="radio_wifi" Content="WIFI" IsChecked="True" CheckedChanged="radio_wifi_CheckedChanged"/>
+                                <RadioButton x:Name="radio_eth" Content="ETH" CheckedChanged="radio_wifi_CheckedChanged"/>
                             </StackLayout>
                         </Grid>
 
@@ -144,8 +113,8 @@
                             <Label Text="SSID" Grid.Column="0" Grid.Row="0" HorizontalTextAlignment="End"/>
                             <Label Text="Password" Grid.Column="0" Grid.Row="1" HorizontalTextAlignment="End"/>
                             
-                            <Entry Text="" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2"/>
-                            <Entry Grid.Column="1" Grid.Row="1" IsPassword="true" Grid.ColumnSpan="2"/>
+                            <Entry Text="{Binding WifiSsid}" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" MaxLength="32"/>
+                            <Entry Text="{Binding WifiPassword}" Grid.Column="1" Grid.Row="1" IsPassword="true" Grid.ColumnSpan="2" MaxLength="64"/>
 
                         </Grid>
                     </StackLayout>
@@ -158,11 +127,16 @@
                         <Grid>
                             <Label Grid.Column="0" Grid.Row="0" Text="Host" HorizontalTextAlignment="End"/>
                             <Label Grid.Column="0" Grid.Row="1" Text="Port" HorizontalTextAlignment="End"/>
-                            <Label Grid.Column="0" Grid.Row="2" Text="CA" HorizontalTextAlignment="End"/>
-                            <Entry x:Name="entry_mqtt_host" Text="192.168.0.1" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2"/>
-                            <Entry x:Name="entry_mqtt_port" Text="8883" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan ="2" Keyboard="Numeric"/>
-                            <Entry x:Name="entry_mqtt_ca" Grid.Column="1" Grid.Row="2" IsReadOnly="True" Grid.ColumnSpan="2"/>
+
+                            <Entry x:Name="entry_mqtt_host" Text="{Binding MqttHost}" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2"/>
+                            <Entry x:Name="entry_mqtt_port" Text="{Binding MqttPort}" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan ="2" Keyboard="Numeric"/>
                         </Grid>
+
+                        <Label Text="MQTT CA data" HorizontalTextAlignment="Start"/>
+                        <ScrollView HeightRequest="200">
+                            <Editor AutoSize="TextChanges" Text="{Binding CaData}" FontSize="Micro" BackgroundColor="LightGray"/>
+                        </ScrollView>
+
                         <StackLayout Orientation="Horizontal">
                             <Label Text="URI "/>
                             <Label>
@@ -191,9 +165,9 @@
                             <Label Text="{Binding Source={x:Reference entry_wh2}, Path=Text, StringFormat='({0}h)'}" Grid.Column="1" Grid.Row="1" HorizontalOptions="Start"/>
                             <Label Text="{Binding Source={x:Reference entry_wh3}, Path=Text, StringFormat='({0}h)'}" Grid.Column="1" Grid.Row="2" HorizontalOptions="Start"/>
 
-                            <Entry x:Name="entry_wh1" Text="1.5" Grid.Row="0" Grid.Column="2" Keyboard="Numeric"/>
-                            <Entry x:Name="entry_wh2" Text="2.5" Grid.Row="1" Grid.Column="2" Keyboard="Numeric"/>
-                            <Entry x:Name="entry_wh3" Text="3.5" Grid.Row="2" Grid.Column="2" Keyboard="Numeric"/>
+                            <Entry x:Name="entry_wh1" Text="{Binding WorkHour1}" Grid.Row="0" Grid.Column="2" Keyboard="Numeric"/>
+                            <Entry x:Name="entry_wh2" Text="{Binding WorkHour2}" Grid.Row="1" Grid.Column="2" Keyboard="Numeric"/>
+                            <Entry x:Name="entry_wh3" Text="{Binding WorkHour3}" Grid.Row="2" Grid.Column="2" Keyboard="Numeric"/>
                         </Grid>
                     </StackLayout>
                 </Frame>
@@ -207,13 +181,34 @@
                             <Label Text="NTC 2" Grid.Row="1" Grid.Column="1"/>
                             <Label Text="NTC 3" Grid.Row="2" Grid.Column="1"/>
 
-                            <Label Text="31.5" Grid.Row="0" Grid.Column="2"/>
-                            <Label Text="32.1" Grid.Row="1" Grid.Column="2"/>
-                            <Label Text="30.0" Grid.Row="2" Grid.Column="2"/>
-
+                            <Label Text="{Binding NtcTemp1, StringFormat='{0}&#186;C'}" Grid.Row="0" Grid.Column="2"/>
+                            <Label Text="{Binding NtcTemp2, StringFormat='{0}&#186;C'}" Grid.Row="1" Grid.Column="2"/>
+                            <Label Text="{Binding NtcTemp3, StringFormat='{0}&#186;C'}" Grid.Row="2" Grid.Column="2"/>
+                            
+                            
                             <Label Text="Offset" Grid.Row="3" Grid.Column="1"/>
-                            <Entry Text="0.0" Grid.Row="3" Grid.Column="2" Keyboard="Numeric"/>
-                            <Button Text="Preview" Grid.Row="4" Grid.Column="2"/>
+                            <Grid Grid.Row="3" Grid.Column="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Text="&#186;C" Grid.Column="1"/>
+                                <Entry Text="{Binding NtcTempOffset}"/>    
+                            </Grid>
+                            
+                            <Button x:Name="btnTempOffset" Text="Preview" Grid.Row="5" Grid.Column="2" Clicked="btnTempOffset_Clicked"/>
+                                
+                            <Label Text="Limit" Grid.Row="4" Grid.Column="1"/>
+                            
+                            <Grid  Grid.Column="2" Grid.Row="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Entry Text="{Binding TempLimit}" Grid.Column="0"/>
+                                <Label Text="&#186;C" Grid.Column="1"/>
+                            </Grid>
+                            
                         </Grid>
                     </StackLayout>
                 </Frame>
@@ -227,16 +222,16 @@
                             <Label Text="Input 2:" Grid.Row="1" Grid.Column="1"/>
                             <Label Text="Input 2:" Grid.Row="2" Grid.Column="1"/>
 
-                            <Label Text="Active" Grid.Row="0" Grid.Column="2"/>
-                            <Label Text="No-Active" Grid.Row="1" Grid.Column="2"/>
-                            <Label Text="No-Active" Grid.Row="2" Grid.Column="2"/>
+                            <Label Text="{Binding DiInput1}" Grid.Row="0" Grid.Column="2"/>
+                            <Label Text="{Binding DiInput2}" Grid.Row="1" Grid.Column="2"/>
+                            <Label Text="{Binding DiInput3}" Grid.Row="2" Grid.Column="2"/>
                         </Grid>
                     </StackLayout>
                 </Frame>
     
                 <!--Button configuration-->
                 <Frame>
-                    <Button Text="Write Configure" TextTransform="None" HorizontalOptions="End"/>
+                    <Button x:Name="btnWriteConfig" Text="Write Configure" TextTransform="None" HorizontalOptions="End" Clicked="btnWriteConfig_Clicked"/>
                 </Frame>
                 
             </StackLayout>

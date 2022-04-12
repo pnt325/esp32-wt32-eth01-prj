@@ -46,7 +46,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 
 static bool is_notify = 0;
 static uint8_t ca_file[2048];
-static uint8_t ca_write_index;
+static uint16_t ca_write_index;
 static SemaphoreHandle_t send_block;
 static uint8_t ble_data[BLE_PTC_DATA_SIZE];
 static uint8_t char1_str[] = {0x11, 0x22, 0x33};
@@ -285,7 +285,7 @@ void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble
 {
     if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC)
     {
-        esp_log_buffer_hex(GATTS_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
+        // esp_log_buffer_hex(GATTS_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
         received_handle(prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
     }
     else
@@ -360,6 +360,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     }
     case ESP_GATTS_WRITE_EVT:
     {
+        uint8_t user_data = 0;
         ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %d, handle %d", param->write.conn_id, param->write.trans_id, param->write.handle);
         if (!param->write.is_prep)
         {
@@ -413,12 +414,16 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
             else
             {
                 ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, user data, value len %d, value :", param->write.len);
-                esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
-
-                received_handle(param->write.value, param->write.len);
+                user_data = 1;
+                // esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
+                // received_handle(param->write.value, param->write.len);
             }
         }
         example_write_event_env(gatts_if, &a_prepare_write_env, param);
+        if(user_data)
+        {
+            received_handle(param->write.value, param->write.len);
+        }
         break;
     }
     case ESP_GATTS_EXEC_WRITE_EVT:
@@ -516,7 +521,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         is_notify = false;
         break;
     case ESP_GATTS_CONF_EVT:
-        ESP_LOGI(GATTS_TAG, "ESP_GATTS_CONF_EVT, status %d attr_handle %d", param->conf.status, param->conf.handle);
+        // ESP_LOGI(GATTS_TAG, "ESP_GATTS_CONF_EVT, status %d attr_handle %d", param->conf.status, param->conf.handle);
         if (param->conf.status != ESP_GATT_OK)
         {
             esp_log_buffer_hex(GATTS_TAG, param->conf.value, param->conf.len);
@@ -646,7 +651,10 @@ bool BLE_is_notify(void)
 static void ble_res_success(uint8_t cmd)
 {
     ESP_LOGI(GATTS_TAG, "Response success: %d", cmd);
-    ble_send_data(BLE_CMD_ACK, &cmd, 1);
+    if(ble_send_data(BLE_CMD_ACK, &cmd, 1) == false)
+    {
+        ESP_ERROR_CHECK(ESP_FAIL);
+    }
 }
 
 static void ble_res_failure(uint8_t cmd)
@@ -663,6 +671,27 @@ static void received_handle(uint8_t* data, uint8_t len)
     }
 
     ESP_LOGI(GATTS_TAG, "Received packet, cmd: %d, len: %d", pack.cmd, pack.len);
+
+    if(pack.cmd == BLE_CMD_WORK_HOUR)
+    {
+        ESP_LOGI(GATTS_TAG, "Write work _hour: %s", pack.datas);
+        if(pack.len < 12)
+        {
+            ble_res_failure(pack.cmd);
+            return;
+        }
+        uint32_t* wh = (uint32_t)pack.datas;
+        ESP_LOGI(GATTS_TAG, "%d, %d, %d", wh[0], wh[1], wh[2]);
+        if(UCFG_write_work_hour(wh) == false)
+        {
+            ble_res_failure(pack.cmd);
+        }
+        else
+        {
+            ble_res_success(pack.cmd);
+        }
+        return;
+    }
 
     if(pack.cmd == BLE_CMD_WIFI_SSID)
     {
@@ -816,8 +845,8 @@ static void received_handle(uint8_t* data, uint8_t len)
 
     if(pack.cmd == BLE_CMD_MQTT_CA_END)
     {
-        ESP_LOGI(GATTS_TAG, "Write CA Data: %s", ca_file);
-        if(UCFG_write_mqtt_ca(ca_file, ca_write_index + 1))
+        ESP_LOGI(GATTS_TAG, "Write CA Data: %s, len %d", (const char*)ca_file, ca_write_index);
+        if(UCFG_write_mqtt_ca(ca_file, strlen((const char*)ca_file)))
         {
             ble_res_success(pack.cmd);
         }
