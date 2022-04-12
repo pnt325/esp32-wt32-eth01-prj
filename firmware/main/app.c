@@ -145,23 +145,23 @@ void APP_run(void)
         // increate period in case of device in configure mode.
         if(on_config)
         {
-            // if(time >= 1000 && BLE_is_notify())
-            // {
-            //     float temp[3] = {0};
-            //     temp[0] = NTC_read(0);
-            //     temp[1] = NTC_read(1);
-            //     temp[2] = NTC_read(2);
+            if(time >= 1000 && BLE_is_notify())
+            {
+                float temp[3] = {0};
+                temp[0] = NTC_read(0);
+                temp[1] = NTC_read(1);
+                temp[2] = NTC_read(2);
 
-            //     BLE_send_data(BLE_CMD_PROBE_TEMP, (uint8_t*)temp, sizeof(float)*3);
+                BLE_send_data(BLE_CMD_PROBE_TEMP, (uint8_t*)temp, sizeof(float)*3);
 
-            //     uint8_t di[3] = {0};
-            //     di[0] = DIO_status(0);
-            //     di[1] = DIO_status(1);
-            //     di[2] = DIO_status(2);
-            //     BLE_send_data(BLE_CMD_PROBE_DI, di, 3);
+                uint8_t di[3] = {0};
+                di[0] = DIO_status(0);
+                di[1] = DIO_status(1);
+                di[2] = DIO_status(2);
+                BLE_send_data(BLE_CMD_PROBE_DI, di, 3);
 
-            //     temp_period = esp_log_timestamp();
-            // }
+                temp_period = esp_log_timestamp();
+            }
         }
         else 
         {

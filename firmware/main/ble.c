@@ -44,6 +44,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 #define GATTS_DEMO_CHAR_VAL_LEN_MAX 0x40
 #define PREPARE_BUF_MAX_SIZE 140
 
+static uint8_t connection_type = CONNECTION_NONE;
 static bool is_notify = 0;
 static uint8_t ca_file[2048];
 static uint16_t ca_write_index;
@@ -820,15 +821,18 @@ static void received_handle(uint8_t* data, uint8_t len)
             return;
         }
 
-        ESP_LOGI(GATTS_TAG, "Write connection: %s", pack.datas[0] == 1 ? "WIFI" : pack.datas[0] == 2 ? "ETH" : "Unknown");
-        if(UCFG_write_connection(pack.datas[0]))
-        {
-            ble_res_success(pack.cmd);
-        }
-        else
-        {
-            ble_res_failure(pack.cmd);
-        }
+        connection_type = pack.datas[0];
+        ble_res_success(pack.cmd);
+
+        // ESP_LOGI(GATTS_TAG, "Write connection: %s", pack.datas[0] == 1 ? "WIFI" : pack.datas[0] == 2 ? "ETH" : "Unknown");
+        // if(UCFG_write_connection(pack.datas[0]))
+        // {
+        //     ble_res_success(pack.cmd);
+        // }
+        // else
+        // {
+        //     ble_res_failure(pack.cmd);
+        // }
 
         return;
     }
@@ -866,6 +870,20 @@ static void received_handle(uint8_t* data, uint8_t len)
             ca_write_index++;
         }
         ble_res_success(pack.cmd);
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_CONFIG_COMMIT)
+    {
+        ESP_LOGI(GATTS_TAG, "Write connection: %s", pack.datas[0] == 1 ? "WIFI" : pack.datas[0] == 2 ? "ETH" : "Unknown");
+        if(UCFG_write_connection(connection_type))
+        {
+            ble_res_success(pack.cmd);
+        }
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
         return;
     }
 }   
