@@ -269,7 +269,7 @@ namespace GridEye.Views
                     }
 
                     // MQTT host, uri
-                    string uri = $"mqtts//:{vmMainPage.MqttHost}:{vmMainPage.MqttPort}";
+                    string uri = $"mqtts://{vmMainPage.MqttHost}:{vmMainPage.MqttPort}";
                     var uri_data = Encoding.UTF8.GetBytes(uri);
                     if (sendConfig(Protocol.Command.BLE_CMD_MQTT_HOST, uri_data, uri.Length) == false)
                     {
