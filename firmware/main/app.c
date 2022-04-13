@@ -20,6 +20,15 @@
 
 #define APP_TAG  "APP"
 
+#define NUMBER_OF_CHANNEL           3
+#define LED_BLINK_PERIOD_ON_CONFIG  100         //! ms
+#define LED_BLINK_PERIOD_ON_APP     500         //! ms
+#define TEMPERATURE_SCAN_PERIOD     10000       //! ms, 10 sec
+#define TEMPERATURE_DELAY_ALERT     (5*60*1000) //! 5 min
+#define WORK_HOUR_STORE_PERIOD      15          //! sec
+#define WORK_HOUR_UPDATE_PERIOD     1000        //! ms, 1 sec
+#define WORK_HOUR_SYNC_PERIOD       3600        //! sec, 1h
+
 enum 
 {   
     LED_OFF,
@@ -27,41 +36,40 @@ enum
     LED_BLINK
 };
 
-static void main_handle(void* param);
-static void led_handle(void);
-static void btn_handle(void);
-static void temp_handle(void);
+static void main_handle(void* param);           //! App handle
+static void led_handle(void);                   //! Control LED
+static void btn_handle(void);                   //! Button long press handle.   
+static void temp_handle(void);                  //! Temperature alarm handle
 
-static void network_connected(void);
-static void network_disconnected(void);
-static void enter_config(void);
-static void work_hour_commit(void);
-static void mqtt_temp_alert(float* temp);
-static void mqtt_work_hours(uint32_t* hours);
+static void network_connected(void);            //! network conected callback
+static void network_disconnected(void);         //! network disconnected callback
+static void enter_config(void);                 //! initialize to enter configuration mode
+static void work_hour_commit(void);             //! Save work-hour to flash
+static void mqtt_temp_alert(float* temp);       //! Publish temperature alert to MQTT broker
+static void mqtt_work_hours(uint32_t* hours);   //! Update the work-hour as period to MQTT broker
 
-static bool on_config = false;
-static uint32_t led_blink_period = 500;
-static uint8_t led_ctrl = LED_BLINK;
+static bool     on_config        = false;                       //! ON configuration mode run with bluetooth only
+static uint32_t led_blink_period = LED_BLINK_PERIOD_ON_CONFIG;  //! LED blink period
+static uint8_t  led_ctrl         = LED_BLINK;                   //! LED control state
 
-static uint32_t work_hours[3];
-static uint32_t work_hour_olds[3];
-static float temp_offset;
-static uint8_t temp_limit = 95;   // default value
+static uint32_t work_hours[NUMBER_OF_CHANNEL];      //! Current work-hour count, sec
+static uint32_t work_hour_olds[NUMBER_OF_CHANNEL];  //! Last work-hour count, sec
+static float    temp_offset;                        //! Temperature offset value  
+static uint8_t  temp_limit;                         //! Temperaure limit to take alarm value.
 
-static char mqtt_temp_alert_topic[32];
-static char mqtt_work_hour_topic[32];
-static char device_token[11];
+static char mqtt_temp_alert_topic[32];  //! MQTT alert topic
+static char mqtt_work_hour_topic[32];   //! MQTT work-hour topic
+char        device_token[11];           //! Device ID, use as token on publish topic to MQTT broker
 
 void APP_init(void)
 {
-    DIO_init();
-    NTC_init();
-    UCFG_init();
+    DIO_init();     //! Initialze GPIO use on APP
+    NTC_init();     //! NTC sensor initialize
+    UCFG_init();    //! User configure initialize
 
-    //! Token is device ID
+    //! Get MAC address as device token
     uint8_t mac_address[6] = {0};
     ESP_ERROR_CHECK(esp_read_mac(mac_address, ESP_MAC_WIFI_STA));
-
     memset(mqtt_temp_alert_topic, 0x00, sizeof(mqtt_temp_alert_topic));
     memset(mqtt_work_hour_topic, 0x00, sizeof(mqtt_work_hour_topic));
     memset(device_token, 0x00, sizeof(device_token));
@@ -79,10 +87,7 @@ void APP_init(void)
     ESP_LOGI(APP_TAG, "topic: %s", mqtt_temp_alert_topic);
     ESP_LOGI(APP_TAG, "topic: %s", mqtt_work_hour_topic);
 
-    // Create task main app.
-    xTaskCreatePinnedToCore(main_handle, "main_app", 4096, NULL, 25, NULL, APP_CPU_NUM);
-
-    //! Enter config or run application
+    //! First boot application if button pressed enter configuration mode.
     if(DIO_button_state() == BUTTON_PRESSED)
     {
         ESP_LOGI(APP_TAG, "Button Enter configure");
@@ -96,7 +101,6 @@ void APP_init(void)
             connection = CONNECTION_NONE;
         }
 
-        // connection = CONNECTION_ETH;
         if (connection != CONNECTION_WIFI && connection != CONNECTION_ETH)
         {
             ESP_LOGE(APP_TAG, "Invalid connection Enter configure");
@@ -106,7 +110,7 @@ void APP_init(void)
         {
             if (CONNECT_init(connection))
             {
-                led_blink_period = 500;
+                led_blink_period = LED_BLINK_PERIOD_ON_APP;
                 CONNECT_sub_connected_event(network_connected);
                 CONNECT_sub_disconnected_event(network_disconnected);
             }
@@ -116,6 +120,12 @@ void APP_init(void)
                 ESP_LOGI(APP_TAG, "Enter configure, cause connection failure");
             }
         }
+    }
+
+    //! Create task handle without
+    if(on_config == false)
+    {
+        xTaskCreatePinnedToCore(main_handle, "main_app", 4096, NULL, 25, NULL, APP_CPU_NUM);
     }
 
     APP_run();
@@ -142,17 +152,16 @@ void APP_run(void)
     {
         uint32_t time = (uint32_t)(esp_log_timestamp() - temp_period);
 
-        // increate period in case of device in configure mode.
         if(on_config)
         {
-            if(time >= 1000 && BLE_is_notify())
+            if (time >= 1000 && BLE_is_notify())
             {
                 float temp[3] = {0};
                 temp[0] = NTC_read(0);
                 temp[1] = NTC_read(1);
                 temp[2] = NTC_read(2);
 
-                BLE_send_data(BLE_CMD_PROBE_TEMP, (uint8_t*)temp, sizeof(float)*3);
+                BLE_send_data(BLE_CMD_PROBE_TEMP, (uint8_t *)temp, sizeof(float) * 3);
 
                 uint8_t di[3] = {0};
                 di[0] = DIO_status(0);
@@ -165,7 +174,7 @@ void APP_run(void)
         }
         else 
         {
-            if (time >= 10000)
+            if (time >= TEMPERATURE_SCAN_PERIOD)
             {
                 temp_handle();
                 temp_period = esp_log_timestamp();
@@ -191,7 +200,7 @@ static void main_handle(void* param)
     }
 
     ESP_LOGI(APP_TAG, "Last work-hour: %d, %d, %d", work_hours[0], work_hours[1], work_hours[2]);
-    for(uint8_t i = 0; i < 3; i++)
+    for(uint8_t i = 0; i < NUMBER_OF_CHANNEL; i++)
     {
         work_hour_olds[i] = work_hours[i];
     }
@@ -202,7 +211,7 @@ static void main_handle(void* param)
     {
         //! count work hour
         uint32_t time = (uint32_t)(esp_log_timestamp() - one_sec_hold);
-        if(time >= 1000)
+        if(time >= WORK_HOUR_UPDATE_PERIOD)
         {
             uint8_t publish_flag = 0;
             for(uint8_t i = 0; i < 3; i++)
@@ -215,7 +224,7 @@ static void main_handle(void* param)
 
                     // FIXME just for test
                     if((work_hours[i] % 5) == 0)
-                    // if((work_hours[i] % 3600) == 0)
+                    // if((work_hours[i] % WORK_HOUR_SYNC_PERIOD) == 0)
                     {
                         publish_flag |= 1;
                     }
@@ -228,7 +237,7 @@ static void main_handle(void* param)
             }
 
             sec_count++;
-            if((sec_count  % 15) == 0)
+            if((sec_count  % WORK_HOUR_STORE_PERIOD) == 0)
             {
                 ESP_LOGI(APP_TAG, "[%d]Save work-hour", sec_count);
                 work_hour_commit();
@@ -319,16 +328,16 @@ static void mqtt_evt(uint8_t connect)
     {
         ESP_LOGI(APP_TAG, "MQTT disconnected");
         led_ctrl = LED_BLINK;
-        led_blink_period = 500;
+        led_blink_period = LED_BLINK_PERIOD_ON_APP;
     }
 }
 
 static void network_connected(void)
 {
-    static uint8_t first_run = 0;
-    if(first_run == 0)
+    static bool first_run = false;
+    if(first_run == false)
     {
-        first_run = 1;
+        first_run = true;
         MQTT_init(mqtt_evt);
     }
 }
@@ -336,14 +345,16 @@ static void network_connected(void)
 static void network_disconnected(void)
 {
     led_ctrl = LED_BLINK;
-    led_blink_period = 500;
+    led_blink_period = LED_BLINK_PERIOD_ON_APP;
+
+    MQTT_clear_connnect();
 }
 
 static void enter_config(void)
 {
-        on_config = true;
-        led_blink_period = 100;
-        BLE_start();
+    on_config = true;
+    led_blink_period = LED_BLINK_PERIOD_ON_CONFIG;
+    BLE_start();
 }
 
 static void work_hour_commit(void)
@@ -351,7 +362,7 @@ static void work_hour_commit(void)
     uint8_t i;
 
     //! Check the work hour is update
-    for(i = 0; i < sizeof(work_hours); i++)
+    for(i = 0; i < NUMBER_OF_CHANNEL; i++)
     {
         if(work_hour_olds[i] != work_hours[i])
         {
@@ -359,8 +370,9 @@ static void work_hour_commit(void)
         }
     }
 
-    if(i == sizeof(work_hours))
+    if(i == NUMBER_OF_CHANNEL)
     {
+        //! Nothing update
         return;
     }
 
@@ -369,7 +381,7 @@ static void work_hour_commit(void)
     return;
 
     //! Update old work-hour
-    for(i = 0; i < sizeof(work_hours); i++)
+    for(i = 0; i < NUMBER_OF_CHANNEL; i++)
     {
         work_hour_olds[i] = work_hours[i];
     }
@@ -383,22 +395,17 @@ static void work_hour_commit(void)
 
 static void temp_handle(void)
 {   
-    static uint8_t alarms[3] = {0};
-    static uint8_t alarm_olds[3] = {0};
-    static uint32_t temp_period[3];
-    static uint8_t is_publish[3] = {0};
+    static uint8_t alarms[NUMBER_OF_CHANNEL]        = {0};
+    static uint8_t alarm_olds[NUMBER_OF_CHANNEL]    = {0};
+    static uint32_t temp_period[NUMBER_OF_CHANNEL]  = {0};
+    static uint8_t is_publish[NUMBER_OF_CHANNEL]    = {0};
 
-    float temps[3] = {25.0f};
+    float temps[NUMBER_OF_CHANNEL] = {25.0f};
     uint8_t publish = 0;
-
-    ESP_LOGI(APP_TAG, "Function update temperature");
-
-    for(uint8_t i = 0; i < 3; i++)
+    
+    for(uint8_t i = 0; i < NUMBER_OF_CHANNEL; i++)
     {
         temps[i] = NTC_read(i) + temp_offset;
-
-        // FIXME Just for test
-        temp_limit = 20;
 
         if(temps[i] >= temp_limit)
         {
@@ -406,11 +413,11 @@ static void temp_handle(void)
         }
         else
         {
-            alarms[i] = 0;
+            alarms[i]     = 0;
             is_publish[i] = 0;
         }
 
-        if(alarms[i] != alarm_olds[i] && alarms[i])
+        if((alarms[i] != alarm_olds[i]) && alarms[i])
         {
             alarm_olds[i] = alarms[i];
             temp_period[i] = esp_log_timestamp();
@@ -423,8 +430,8 @@ static void temp_handle(void)
             //! 5 min
 
             // FIXME Just for test
-            // if(time >= (5*60*1000))
-            if(time >= 5000)
+            // if(time >= TEMPERATURE_DELAY_ALERT)
+            if(time >= 5000)    // Test for 5 sec
             {
                 if(is_publish[i] == 0)
                 {
@@ -434,6 +441,8 @@ static void temp_handle(void)
             }
         }
     }
+
+    ESP_LOGI(APP_TAG, "Temperature update: %f, %f, %f", temps[0], temps[1], temps[2]);
 
     if(publish && on_config == 0)
     {

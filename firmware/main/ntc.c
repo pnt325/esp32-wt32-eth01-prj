@@ -43,8 +43,8 @@
 #define DEFUALT_PULLUP_R    4.7f        //! kOhm
 
 static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
-static const adc_atten_t atten      = ADC_ATTEN_DB_11;
-static const adc_unit_t unit        = ADC_UNIT_1;
+static const adc_atten_t      atten = ADC_ATTEN_DB_11;
+static const adc_unit_t       unit  = ADC_UNIT_1;
 
 
 typedef struct 

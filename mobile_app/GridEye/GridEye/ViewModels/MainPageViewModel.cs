@@ -27,6 +27,7 @@ namespace GridEye.ViewModels
         private string _di_input_2;
         private string _di_input_3;
         private string _temp_limit;
+        private string _device_id;
 
         //public int Connection { get => _connection; set => SetProperty(ref _connection, value);  }
         public string WifiSsid { get => _wifi_ssid; set => SetProperty(ref _wifi_ssid, value); }
@@ -45,9 +46,9 @@ namespace GridEye.ViewModels
         public string DiInput2 { get => _di_input_2; set => SetProperty(ref _di_input_2, value); }
         public string DiInput3 { get => _di_input_3; set => SetProperty(ref _di_input_3, value); }
         public string TempLimit { get => _temp_limit; set => SetProperty(ref _temp_limit, value); }
+        public string DeviceId { get => _device_id; set => SetProperty(ref _device_id, value); }
         public bool ShowProcess { get => showProcess; set => SetProperty(ref showProcess, value); }
         
-
         public MainPageViewModel()
         {
         }

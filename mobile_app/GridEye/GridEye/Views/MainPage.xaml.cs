@@ -5,6 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
+using Xamarin.Essentials;
+using Java.IO;
+using System.IO;
 
 namespace GridEye.Views
 {
@@ -30,30 +33,7 @@ namespace GridEye.Views
             vmMainPage.WorkHour3 = "0";
             vmMainPage.NtcTempOffset = "0";
             vmMainPage.TempLimit = "95";
-            vmMainPage.CaData = "-----BEGIN CERTIFICATE-----" +
-                                "MIIEBTCCAu2gAwIBAgIUA8HYfkSeRx2l6i3Lhj1fKYRXIbowDQYJKoZIhvcNAQEL" +
-                                "BQAwgZExCzAJBgNVBAYTAlZOMRQwEgYDVQQIDAtIbyBDaGkgTWluaDEQMA4GA1UE" +
-                                "BwwHVGh1IER1YzEPMA0GA1UECgwGQ0EgUG50MQ0wCwYDVQQLDARUZXN0MRYwFAYD" +
-                                "VQQDDA0xOTIuMTY4LjAuMTA1MSIwIAYJKoZIhvcNAQkBFhNwaGF0Lm50QGhvdG1h" +
-                                "aWwuY29tMB4XDTIyMDQwOTE3MTMxN1oXDTMyMDQwNjE3MTMxN1owgZExCzAJBgNV" +
-                                "BAYTAlZOMRQwEgYDVQQIDAtIbyBDaGkgTWluaDEQMA4GA1UEBwwHVGh1IER1YzEP" +
-                                "MA0GA1UECgwGQ0EgUG50MQ0wCwYDVQQLDARUZXN0MRYwFAYDVQQDDA0xOTIuMTY4" +
-                                "LjAuMTA1MSIwIAYJKoZIhvcNAQkBFhNwaGF0Lm50QGhvdG1haWwuY29tMIIBIjAN" +
-                                "BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqcp7wq3YRaeA5RHaVWQEoyC0GwFo" +
-                                "Ahn5RNKQvreUgDqn0His6qbHLjNGv1wwMeLLBpnuuPlP + SssliEpp2jAWL564zC7" +
-                                "muxOcxWG6q7HvzNkAXNlBmCSBUaCwKvg + F5kA8QI3WiQlGwyAqqK9KS / QswZUEs0" +
-                                "LQQhJqh9MK1tGTn8qblWQh6ZgXVO0PjxGSsFnNyCQc0Surukoba5sm3PDG / sdCc +" +
-                                "w6BodQiFjFdlaeYyM17l1bkXH5b35Knje9rtVwiTb1sf8MXHppSh2xZpqu2m6SI /" +
-                                "Fr2ZWGlq2grsTp6lfvXJr1u / G4KhdsKWZpvBmVZIX1RGWXRU864yw0VIywIDAQAB" +
-                                "o1MwUTAdBgNVHQ4EFgQUCLDafQSD7l7SsUsGMvNHjjKsabAwHwYDVR0jBBgwFoAU" +
-                                "CLDafQSD7l7SsUsGMvNHjjKsabAwDwYDVR0TAQH / BAUwAwEB / zANBgkqhkiG9w0B" +
-                                "AQsFAAOCAQEANZQbhOIiAtE1H1BFsTFMwNmH7QQT5Vndc1yGOC2hLzKmzDGrup + 3" +
-                                "S5W8DMGxyyDH0jSG1I0HNY + xYAGyR / fuTBOp + lwaMQAOS0P8YAo1OcE / Exl8ZfXJ" +
-                                "0dcM9lb / xPYQxKFyfTOeHMCa2QUAXh5iSr24yJo5Pf / Yxy7LP0dJYZrAeFiLY4pb" +
-                                "ZCjRb7GdgNT64GjxBHkX93dqVX + lX1Z / BgLJp2mWoFqdOjjJD4cbZYfm1SqiFFC8" +
-                                "j6U8I6aBJx9iHFZug / 1FQIWO5KeX++bhLH8VlcQ5 / sCK + ENArlHRsk88JvWs9578" +
-                                "2mzGHMYBWaUYMYtvPsQ1AFSIhPO0S / 9PMw ==" +
-                                  "-----END CERTIFICATE-----";
+            vmMainPage.CaData = "";
         }
 
         private void MainPage_Disappearing(object sender, EventArgs e)
@@ -97,8 +77,15 @@ namespace GridEye.Views
                 case Protocol.Command.BLE_CMD_MQTT_CA_END:
                     break;
                 case Protocol.Command.BLE_CMD_TEMP_OFFSET:
+                    {
+                        float toffset = BitConverter.ToSingle(packet.Data, 0);
+                        vmMainPage.NtcTempOffset = toffset.ToString();
+                    }
                     break;
                 case Protocol.Command.BLE_CMD_TEMP_LIMIT:
+                    {
+                        vmMainPage.TempLimit = packet.Data[0].ToString();
+                    }
                     break;
                 case Protocol.Command.BLE_CMD_CONNECTION:
                     break;
@@ -123,12 +110,36 @@ namespace GridEye.Views
                 case Protocol.Command.BLE_CMD_PROBE_DI:
                     {
                         Protocol.Data.Digital di = new Protocol.Data.Digital();
-                        if(di.Parse(packet.Data, packet.Length))
+                        if (di.Parse(packet.Data, packet.Length))
                         {
                             vmMainPage.DiInput1 = (di.Values[0] == false) ? "Active" : "No-Active";
                             vmMainPage.DiInput2 = (di.Values[1] == false) ? "Active" : "No-Active";
                             vmMainPage.DiInput3 = (di.Values[2] == false) ? "Active" : "No-Active";
                         }
+                    }
+                    break;
+                case Protocol.Command.BLE_CMD_DEVICE_ID:
+                    {
+                        vmMainPage.DeviceId = Encoding.UTF8.GetString(packet.Data);
+                    }
+                    break;
+                case Protocol.Command.BLE_CMD_WORK_HOUR:
+                    {
+                        uint[] work_hours = new uint[3];
+                        for (int i = 0; i < 3; i++)
+                        {
+                            work_hours[i] = BitConverter.ToUInt32(packet.Data, i * 4);
+                        }
+
+                        float[] wh_single = new float[3];
+                        for (int i = 0; i < 3; i++)
+                        {
+                            wh_single[i] = (float)work_hours[i] / 3600.0f;
+                        }
+
+                        vmMainPage.WorkHour1 = wh_single[0].ToString();
+                        vmMainPage.WorkHour2 = wh_single[1].ToString();
+                        vmMainPage.WorkHour3 = wh_single[2].ToString();
                     }
                     break;
                 default:
@@ -139,7 +150,7 @@ namespace GridEye.Views
         private void MainPage_Appearing(object sender, EventArgs e)
         {
             App.BleProtocol.Received += BleProtocol_Received;
-            // App.BleProtocol.Send(Protocol.Command.BLE_CMD_SENSOR_INFO, Protocol.PacketType.Ack, null, 0);
+            App.BleProtocol.Send(Protocol.Command.BLE_CMD_DEVICE_ID, null, 0);
         }
 
         protected override bool OnBackButtonPressed()
@@ -148,7 +159,7 @@ namespace GridEye.Views
             return true;
         }
 
-        int conneciton = 0;
+        int conneciton = CONNECTION_WIFI;    // default
         private void radio_wifi_CheckedChanged(object sender, CheckedChangedEventArgs e)
         {
             RadioButton rbtn = sender as RadioButton;
@@ -355,9 +366,15 @@ namespace GridEye.Views
                         break;
                     }
 
-                    // Temp Limit
-                    byte[] tlimit_data = BitConverter.GetBytes(float.Parse(vmMainPage.TempLimit));
-                    if (sendConfig(Protocol.Command.BLE_CMD_TEMP_LIMIT, tlimit_data, tlimit_data.Length) == false)
+                    // Temp limit
+                    byte tlimit = byte.Parse(vmMainPage.TempLimit);
+                    if (sendConfig(Protocol.Command.BLE_CMD_TEMP_LIMIT, new byte[] {tlimit}, 1) == false)
+                    {
+                        break;
+                    }
+
+                    // Write configure confirm
+                    if (sendConfig(Protocol.Command.BLE_CMD_CONFIG_COMMIT, null, 0) == false)
                     {
                         break;
                     }
@@ -411,25 +428,6 @@ namespace GridEye.Views
                 return false;
             }
 
-            //eventWaitHandle.Reset();
-            //if (eventWaitHandle.WaitOne(500) == false)
-            //{
-            //    vmMainPage.ShowProcess = false;
-            //    onWriteConfigure = false;
-            //    showItoastSafe($"Write {cmd} timeout");
-            //    return false;
-            //}
-            //else
-            //{
-            //    if (waitCmd == Protocol.Command.BLE_CMD_NACK)
-            //    {
-            //        onWriteConfigure = false;
-            //        vmMainPage.ShowProcess = false;
-            //        showItoastSafe($"Write {cmd} failure");
-            //        return false;
-            //    }
-            //}
-
             Debug.WriteLine($"Config CMD: {cmd}");
             return true;
         }
@@ -450,6 +448,42 @@ namespace GridEye.Views
             {
                 showItoast(msg);
             });
+        }
+
+
+        private async void Button_Clicked(object sender, EventArgs e)
+        {
+            try
+            {
+                var filePicker = await FilePicker.PickAsync();
+                if(filePicker == null)
+                {
+                    showItoast("Choose file failure");
+                    return;
+                }
+
+                if (filePicker.FileName.EndsWith("crt") == false)
+                {
+                    showItoast("File type invalid");
+                    return;
+                }
+
+                var stream = await filePicker.OpenReadAsync();
+                if (stream == null)
+                {
+                    showItoast("Open file failure");
+                    return;
+                }
+
+                using (var reader = new StreamReader(stream))
+                {
+                    vmMainPage.CaData = reader.ReadToEnd();
+                }
+            }
+            catch (Exception)
+            {
+                showItoast("Open file error");
+            }
         }
     }
 }

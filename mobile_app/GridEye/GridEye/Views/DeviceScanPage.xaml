@@ -9,7 +9,7 @@
         <StackLayout AbsoluteLayout.LayoutBounds="0,0,1,1" AbsoluteLayout.LayoutFlags="All">
             <controls:NavigateBarTemplate x:Name="barCtrl" CaptionTitle="Devices Scan" HasBack="true" HasNext="False" BackEnable="True" BackClicked="barCtrl_BackClicked"/>
             <StackLayout Padding="10, 0, 10, 0">
-                <Label IsVisible="{Binding ShowGuide}" VerticalTextAlignment="Center" HorizontalTextAlignment="Center" FontSize="18">Do not find any device</Label>
+                <Label IsVisible="{Binding ShowGuide}" VerticalTextAlignment="Center" HorizontalTextAlignment="Center" FontSize="18">Device not found</Label>
                 <ListView x:Name="ListViewDevices" 
                       SelectionMode="None" 
                       ItemTapped="ListViewDevices_ItemTapped" 

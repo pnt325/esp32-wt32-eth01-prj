@@ -22,6 +22,8 @@ namespace GridEye.Protocol
         BLE_CMD_CONNECTION,
         BLE_CMD_PROBE_TEMP,
         BLE_CMD_PROBE_DI,
-        BLE_CMD_WORK_HOUR
+        BLE_CMD_WORK_HOUR,
+        BLE_CMD_SYNC_ENABLE,
+        BLE_CMD_DEVICE_ID
     }
 }

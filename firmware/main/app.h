@@ -10,6 +10,8 @@
 
 #include <stdint.h>
 
+extern char device_token[11];
+
 void APP_init(void);
 void APP_run(void);
 

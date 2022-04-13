@@ -28,6 +28,8 @@ enum {
     BLE_CMD_PROBE_TEMP,             // temperature
     BLE_CMD_PROBE_DI,               // digital status
     BLE_CMD_WORK_HOUR,              // Set new work-hour
+    BLE_CMD_SYNC_ENABLE,
+    BLE_CMD_DEVICE_ID,
 };
 
  #endif /*_BLE_DATA_H_*/

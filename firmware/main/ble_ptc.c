@@ -36,8 +36,8 @@ bool BLE_PTC_parse(const uint8_t* datas, uint8_t len, ble_pack_t* pack)
     }
 
     uint8_t sum = 0xff;
-    
     int i;
+    
     for(i = 0; i < pack->len + 2; i++)
     {
         sum += datas[i];

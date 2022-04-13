@@ -28,41 +28,43 @@
 #include "ble_ptc.h"
 #include "ble_data.h"
 #include "ucfg.h"
+#include "app.h"
 
 #define GATTS_TAG "BLE"
 
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
-#define GATTS_SERVICE_UUID_TEST_A 0x00FF
-#define GATTS_CHAR_UUID_TEST_A    0xFF01
-#define GATTS_DESCR_UUID_TEST_A   0x3333
-#define GATTS_NUM_HANDLE_TEST_A   4
+#define GATTS_SERVICE_UUID_TEST_A   0x00FF
+#define GATTS_CHAR_UUID_TEST_A      0xFF01
+#define GATTS_DESCR_UUID_TEST_A     0x3333
+#define GATTS_NUM_HANDLE_TEST_A     4
 
-#define TEST_DEVICE_NAME "WT32-ETH01"
-#define TEST_MANUFACTURER_DATA_LEN 17
+#define TEST_DEVICE_NAME            "WT32-ETH01"
+#define TEST_MANUFACTURER_DATA_LEN  17
 
 #define GATTS_DEMO_CHAR_VAL_LEN_MAX 0x40
-#define PREPARE_BUF_MAX_SIZE 140
+#define PREPARE_BUF_MAX_SIZE        140
 
-static uint8_t connection_type = CONNECTION_NONE;
-static bool is_notify = 0;
-static uint8_t ca_file[2048];
-static uint16_t ca_write_index;
-static SemaphoreHandle_t send_block;
-static uint8_t ble_data[BLE_PTC_DATA_SIZE];
-static uint8_t char1_str[] = {0x11, 0x22, 0x33};
-static esp_gatt_char_prop_t a_property = 0;
+static bool                 is_sync_config      = false;
+static bool                 sync_enable         = false;
+static uint8_t              connection_type     = CONNECTION_NONE;
+static bool                 is_notify           = 0;
+// static uint8_t              ca_file[2048];
+static uint16_t             ca_write_index;
+static SemaphoreHandle_t    send_block;
+static uint8_t              ble_data[BLE_PTC_DATA_SIZE];
+static uint8_t              char1_str[]         = {0x11, 0x22, 0x33};
+static esp_gatt_char_prop_t a_property          = 0;
+static uint8_t              adv_config_done     = 0;
 
-static esp_attr_value_t gatts_demo_char1_val =
-    {
-        .attr_max_len = GATTS_DEMO_CHAR_VAL_LEN_MAX,
-        .attr_len = sizeof(char1_str),
-        .attr_value = char1_str,
+static esp_attr_value_t gatts_demo_char1_val = {
+    .attr_max_len = GATTS_DEMO_CHAR_VAL_LEN_MAX,
+    .attr_len = sizeof(char1_str),
+    .attr_value = char1_str,
 };
 
-static uint8_t adv_config_done = 0;
-#define adv_config_flag (1 << 0)
-#define scan_rsp_config_flag (1 << 1)
+#define adv_config_flag         (1 << 0)
+#define scan_rsp_config_flag    (1 << 1)
 
 #ifdef CONFIG_SET_RAW_ADV_DATA
 static uint8_t raw_adv_data[] = {
@@ -286,7 +288,6 @@ void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble
 {
     if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC)
     {
-        // esp_log_buffer_hex(GATTS_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
         received_handle(prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
     }
     else
@@ -306,8 +307,8 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.inst_id = 0x00;
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.len = ESP_UUID_LEN_16;
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.uuid.uuid16 = GATTS_SERVICE_UUID_TEST_A;
-
-        esp_err_t set_dev_name_ret = esp_ble_gap_set_device_name(TEST_DEVICE_NAME);
+        
+        esp_err_t set_dev_name_ret = esp_ble_gap_set_device_name((TEST_DEVICE_NAME));
         if (set_dev_name_ret)
         {
             ESP_LOGE(GATTS_TAG, "set device name failed, error code = %x", set_dev_name_ret);
@@ -416,15 +417,15 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
             {
                 ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, user data, value len %d, value :", param->write.len);
                 user_data = 1;
-                // esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
-                // received_handle(param->write.value, param->write.len);
             }
         }
         example_write_event_env(gatts_if, &a_prepare_write_env, param);
+
         if(user_data)
         {
             received_handle(param->write.value, param->write.len);
         }
+
         break;
     }
     case ESP_GATTS_EXEC_WRITE_EVT:
@@ -580,7 +581,6 @@ bool BLE_start(void)
     esp_err_t ret;
 
     send_block = xSemaphoreCreateMutex();
-
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -634,6 +634,7 @@ bool BLE_start(void)
     if (local_mtu_ret)
     {
         ESP_LOGE(GATTS_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
+        return false;
     }
 
     return true;
@@ -647,6 +648,13 @@ bool BLE_send_data(uint8_t cmd, uint8_t* data, uint8_t len)
 bool BLE_is_notify(void)
 {
     return is_notify;
+}
+
+bool BLE_is_sync_config(void)
+{
+    bool sync = is_sync_config;
+    is_sync_config = false; 
+    return sync;
 }
 
 static void ble_res_success(uint8_t cmd)
@@ -681,7 +689,7 @@ static void received_handle(uint8_t* data, uint8_t len)
             ble_res_failure(pack.cmd);
             return;
         }
-        uint32_t* wh = (uint32_t)pack.datas;
+        uint32_t* wh = (uint32_t*)pack.datas;
         ESP_LOGI(GATTS_TAG, "%d, %d, %d", wh[0], wh[1], wh[2]);
         if(UCFG_write_work_hour(wh) == false)
         {
@@ -821,19 +829,9 @@ static void received_handle(uint8_t* data, uint8_t len)
             return;
         }
 
+        ESP_LOGI(GATTS_TAG, "Write connection: %s", pack.datas[0] == 1 ? "WIFI" : pack.datas[0] == 2 ? "ETH" : "Unknown");
         connection_type = pack.datas[0];
         ble_res_success(pack.cmd);
-
-        // ESP_LOGI(GATTS_TAG, "Write connection: %s", pack.datas[0] == 1 ? "WIFI" : pack.datas[0] == 2 ? "ETH" : "Unknown");
-        // if(UCFG_write_connection(pack.datas[0]))
-        // {
-        //     ble_res_success(pack.cmd);
-        // }
-        // else
-        // {
-        //     ble_res_failure(pack.cmd);
-        // }
-
         return;
     }
 
@@ -841,7 +839,7 @@ static void received_handle(uint8_t* data, uint8_t len)
     if(pack.cmd == BLE_CMD_MQTT_CA_BEGIN)
     {
         ca_write_index = 0;
-        memset(ca_file, 0x00, sizeof(ca_file)); //! Reset data to zero
+        memset(mqtt_ca_file, 0x00, sizeof(mqtt_ca_file)); //! Reset data to zero
         ESP_LOGI(GATTS_TAG, "Write CA begin");
         ble_res_success(pack.cmd);
         return;
@@ -849,8 +847,8 @@ static void received_handle(uint8_t* data, uint8_t len)
 
     if(pack.cmd == BLE_CMD_MQTT_CA_END)
     {
-        ESP_LOGI(GATTS_TAG, "Write CA Data: %s, len %d", (const char*)ca_file, ca_write_index);
-        if(UCFG_write_mqtt_ca(ca_file, strlen((const char*)ca_file)))
+        ESP_LOGI(GATTS_TAG, "Write CA Data: %s, len %d", (const char*)mqtt_ca_file, ca_write_index);
+        if(UCFG_write_mqtt_ca(mqtt_ca_file, strlen((const char*)mqtt_ca_file)))
         {
             ble_res_success(pack.cmd);
         }
@@ -866,7 +864,7 @@ static void received_handle(uint8_t* data, uint8_t len)
         ESP_LOGI(GATTS_TAG, "Get CA Data: len = %d", pack.len);
         for(uint8_t i = 0; i < pack.len; i++)
         {
-            ca_file[ca_write_index] = pack.datas[i];
+            mqtt_ca_file[ca_write_index] = pack.datas[i];
             ca_write_index++;
         }
         ble_res_success(pack.cmd);
@@ -875,7 +873,7 @@ static void received_handle(uint8_t* data, uint8_t len)
 
     if(pack.cmd == BLE_CMD_CONFIG_COMMIT)
     {
-        ESP_LOGI(GATTS_TAG, "Write connection: %s", pack.datas[0] == 1 ? "WIFI" : pack.datas[0] == 2 ? "ETH" : "Unknown");
+        ESP_LOGI(GATTS_TAG, "Write connection: %s", connection_type == 1 ? "WIFI" : connection_type == 2 ? "ETH" : "Unknown");
         if(UCFG_write_connection(connection_type))
         {
             ble_res_success(pack.cmd);
@@ -884,6 +882,59 @@ static void received_handle(uint8_t* data, uint8_t len)
         {
             ble_res_failure(pack.cmd);
         }
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_SYNC_ENABLE)
+    {
+        if(pack.len < 1){
+            ble_res_failure(pack.cmd);
+        }
+        else
+        {
+            if(pack.datas[0])
+            {
+                sync_enable = true;
+            }
+            else
+            {
+                sync_enable = false;
+            }
+        }
+
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_DEVICE_ID)
+    {
+        ESP_LOGI(GATTS_TAG, "Get deive id: %s", device_token);
+        BLE_send_data(BLE_CMD_DEVICE_ID, (uint8_t*)device_token, strlen((const char*)device_token));
+
+        // send work-hourt
+        uint32_t work_hours[3] = {0};
+        if (UCFG_read_work_hour(work_hours) == false)
+        {
+            ESP_ERROR_CHECK(ESP_FAIL);
+        }
+
+        BLE_send_data(BLE_CMD_WORK_HOUR, (uint8_t*)work_hours, sizeof(uint32_t)*3);
+
+        // send temp offset
+        float toffset;
+        uint8_t tlimit;
+
+        if (UCFG_read_temp_limit(&tlimit) == false)
+        {
+            ESP_ERROR_CHECK(ESP_FAIL);
+        }
+        BLE_send_data(BLE_CMD_TEMP_LIMIT, &tlimit, 1);
+
+        if (UCFG_read_temp_offset(&toffset) == false)
+        {
+            ESP_ERROR_CHECK(ESP_FAIL);
+        }
+        BLE_send_data(BLE_CMD_TEMP_OFFSET, (uint8_t*)&toffset, 4);
+
         return;
     }
 }   

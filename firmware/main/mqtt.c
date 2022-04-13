@@ -31,8 +31,8 @@ static esp_mqtt_client_handle_t mqtt_client;
 static SemaphoreHandle_t publish_block;
 static mqtt_event_cb_t mqtt_event;
 
-static uint8_t mqtt_connect = 0;
-static uint8_t mqtt_ca_file[2048];
+static bool mqtt_connect = false;
+uint8_t mqtt_ca_file[2048];
 static uint8_t mqtt_host[64];
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
@@ -40,13 +40,12 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
     esp_mqtt_event_handle_t event = event_data;
     esp_mqtt_client_handle_t client = event->client;
+
     int msg_id;
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-        msg_id = esp_mqtt_client_subscribe(client, "test", 0);
-        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-        mqtt_connect = 1;
+        mqtt_connect = true;
         if(mqtt_event)
         {
             mqtt_event(mqtt_connect);
@@ -54,7 +53,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         break;
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
-        mqtt_connect = 0;
+        mqtt_connect = false;
         if(mqtt_event)
         {
             mqtt_event(mqtt_connect);
@@ -119,11 +118,11 @@ void MQTT_init(mqtt_event_cb_t event)
     publish_block = xSemaphoreCreateMutex();
 
     const esp_mqtt_client_config_t mqtt_cfg = {
-        // .uri = "mqtts://192.168.0.105:8883",
+        // .uri = "mqtts://192.168.0.105:8883", -> format
         .uri = (const char*)mqtt_host,
         .cert_pem = (const char *)mqtt_ca_file,
-        .username = "uwt32",
-        .password = "wt32"
+        .username = "uwt32",    // TODO change it
+        .password = "wt32"      // TODO change it
     };
 
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
@@ -137,7 +136,7 @@ void MQTT_init(mqtt_event_cb_t event)
 
 bool MQTT_publish(const char* topic, const char* data, uint16_t len)
 {
-    if(mqtt_connect == 0)
+    if(mqtt_connect == false)
     {
         ESP_LOGE(TAG, "Publish reject: mqtt disconnected");
         return false;
@@ -154,4 +153,9 @@ bool MQTT_publish(const char* topic, const char* data, uint16_t len)
     xSemaphoreGive(publish_block);
 
     return true;
+}
+
+void MQTT_clear_connnect(void)
+{
+    mqtt_connect = false;
 }

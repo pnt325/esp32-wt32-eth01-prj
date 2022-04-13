@@ -16,9 +16,9 @@
 
 typedef struct 
 {
-    uint8_t cmd;
-    uint8_t len;
-    uint8_t datas[BLE_PTC_DATA_SIZE];
+    uint8_t cmd;                        //! Data command
+    uint8_t len;                        //! Data length
+    uint8_t datas[BLE_PTC_DATA_SIZE];   //! Data payload
 }ble_pack_t;
 
 bool BLE_PTC_parse(const uint8_t* datas, uint8_t len, ble_pack_t* pack);

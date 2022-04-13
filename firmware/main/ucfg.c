@@ -333,16 +333,6 @@ void UCFG_test(void)
         ESP_LOGI(UCFG_TAG, "Get mqtt host failure");
     }
 
-    float temp_offset = 0.5f;
-    if(UCFG_write_temp_offset(temp_offset))
-    {
-        ESP_LOGI(UCFG_TAG, "Get temp offset success");
-    }
-    else 
-    {
-        ESP_LOGI(UCFG_TAG, "Get temp offset failure");
-    }
-
     uint8_t connection = 0;
     if(UCFG_read_connection(&connection))
     {

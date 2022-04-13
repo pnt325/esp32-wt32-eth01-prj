@@ -30,6 +30,8 @@
 #define MQTT_CONFIG_NONE    0
 #define MQTT_CONFIG_ACTIVE  1
 
+extern uint8_t mqtt_ca_file[2048];
+
 void UCFG_init(void);
 bool UCFG_write_work_hour(uint32_t* hours);
 bool UCFG_read_work_hour(uint32_t* hours);
