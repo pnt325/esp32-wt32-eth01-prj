@@ -35,6 +35,31 @@ static bool mqtt_connect = false;
 uint8_t mqtt_ca_file[2048];
 static uint8_t mqtt_host[64];
 
+static const uint8_t mqtt_ca[] = "-----BEGIN CERTIFICATE-----\n"
+"MIIEBTCCAu2gAwIBAgIUA8HYfkSeRx2l6i3Lhj1fKYRXIbowDQYJKoZIhvcNAQEL\n"    \
+"BQAwgZExCzAJBgNVBAYTAlZOMRQwEgYDVQQIDAtIbyBDaGkgTWluaDEQMA4GA1UE\n"    \
+"BwwHVGh1IER1YzEPMA0GA1UECgwGQ0EgUG50MQ0wCwYDVQQLDARUZXN0MRYwFAYD\n"    \
+"VQQDDA0xOTIuMTY4LjAuMTA1MSIwIAYJKoZIhvcNAQkBFhNwaGF0Lm50QGhvdG1h\n"    \
+"aWwuY29tMB4XDTIyMDQwOTE3MTMxN1oXDTMyMDQwNjE3MTMxN1owgZExCzAJBgNV\n"    \
+"BAYTAlZOMRQwEgYDVQQIDAtIbyBDaGkgTWluaDEQMA4GA1UEBwwHVGh1IER1YzEP\n"    \
+"MA0GA1UECgwGQ0EgUG50MQ0wCwYDVQQLDARUZXN0MRYwFAYDVQQDDA0xOTIuMTY4\n"    \
+"LjAuMTA1MSIwIAYJKoZIhvcNAQkBFhNwaGF0Lm50QGhvdG1haWwuY29tMIIBIjAN\n"    \
+"BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqcp7wq3YRaeA5RHaVWQEoyC0GwFo\n"    \
+"Ahn5RNKQvreUgDqn0His6qbHLjNGv1wwMeLLBpnuuPlP+SssliEpp2jAWL564zC7\n"    \
+"muxOcxWG6q7HvzNkAXNlBmCSBUaCwKvg+F5kA8QI3WiQlGwyAqqK9KS/QswZUEs0\n"    \
+"LQQhJqh9MK1tGTn8qblWQh6ZgXVO0PjxGSsFnNyCQc0Surukoba5sm3PDG/sdCc+\n"    \
+"w6BodQiFjFdlaeYyM17l1bkXH5b35Knje9rtVwiTb1sf8MXHppSh2xZpqu2m6SI/\n"    \
+"Fr2ZWGlq2grsTp6lfvXJr1u/G4KhdsKWZpvBmVZIX1RGWXRU864yw0VIywIDAQAB\n"    \
+"o1MwUTAdBgNVHQ4EFgQUCLDafQSD7l7SsUsGMvNHjjKsabAwHwYDVR0jBBgwFoAU\n"    \
+"CLDafQSD7l7SsUsGMvNHjjKsabAwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0B\n"    \
+"AQsFAAOCAQEANZQbhOIiAtE1H1BFsTFMwNmH7QQT5Vndc1yGOC2hLzKmzDGrup+3\n"    \
+"S5W8DMGxyyDH0jSG1I0HNY+xYAGyR/fuTBOp+lwaMQAOS0P8YAo1OcE/Exl8ZfXJ\n"    \
+"0dcM9lb/xPYQxKFyfTOeHMCa2QUAXh5iSr24yJo5Pf/Yxy7LP0dJYZrAeFiLY4pb\n"    \
+"ZCjRb7GdgNT64GjxBHkX93dqVX+lX1Z/BgLJp2mWoFqdOjjJD4cbZYfm1SqiFFC8\n"    \
+"j6U8I6aBJx9iHFZug/1FQIWO5KeX++bhLH8VlcQ5/sCK+ENArlHRsk88JvWs9578\n"    \
+"2mzGHMYBWaUYMYtvPsQ1AFSIhPO0S/9PMw==\n"                                \
+"-----END CERTIFICATE-----";
+
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
@@ -100,29 +125,14 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
 void MQTT_init(mqtt_event_cb_t event)
 {
-    uint16_t len = sizeof(mqtt_ca_file);
-    if(UCFG_read_mqtt_ca(mqtt_ca_file, &len) == false)
-    {
-        ESP_ERROR_CHECK(ESP_FAIL);
-    }
-
-    len = sizeof(mqtt_host);
-    if(UCFG_read_mqtt_host(mqtt_host, &len) == false)
-    {
-        ESP_ERROR_CHECK(ESP_FAIL);
-    }
-    ESP_LOGI(TAG, "%s", mqtt_host);
-    ESP_LOGI(TAG, "%s", mqtt_ca_file);
-
     //! Create semaphore
     publish_block = xSemaphoreCreateMutex();
 
     const esp_mqtt_client_config_t mqtt_cfg = {
-        // .uri = "mqtts://192.168.0.105:8883", -> format
-        .uri = (const char*)mqtt_host,
-        .cert_pem = (const char *)mqtt_ca_file,
-        .username = "uwt32",    // TODO change it
-        .password = "wt32"      // TODO change it
+        .uri = "mqtts://192.168.0.105:8883",    // TODO Change it
+        .cert_pem = (const char *)mqtt_ca,      // TODO Change it
+        .username = "uwt32",                    // TODO change it
+        .password = "wt32"                      // TODO change it
     };
 
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());

@@ -69,7 +69,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Label Grid.Column="1" Text="{Binding DeviceId}" FontSize="30" VerticalOptions="Center" FontAttributes="Bold"/>
+                        <Label Grid.Column="1" Text="WT32-ETH01" FontSize="30" VerticalOptions="Center" FontAttributes="Bold"/>
                     </Grid>
                 </Grid>
 
@@ -83,7 +83,7 @@
                                 <ColumnDefinition/>
                                 <ColumnDefinition/>
                             </Grid.ColumnDefinitions>
-                            <Label Text="Connection" FontSize="Body"/>
+                            <Label Text="Connection" FontAttributes="Bold"/>
                             <StackLayout Grid.Column="1" Grid.Row="0" Orientation="Horizontal">
                                 <RadioButton x:Name="radio_wifi" Content="WIFI" IsChecked="True" CheckedChanged="radio_wifi_CheckedChanged"/>
                                 <RadioButton x:Name="radio_eth" Content="ETH" CheckedChanged="radio_wifi_CheckedChanged"/>
@@ -100,7 +100,7 @@
                                     <Setter Property="IsVisible" Value="False"/>
                                 </DataTrigger>
                             </Grid.Triggers>
-                            
+
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
                                 <RowDefinition/>
@@ -112,57 +112,44 @@
 
                             <Label Text="SSID" Grid.Column="0" Grid.Row="0" HorizontalTextAlignment="End"/>
                             <Label Text="Password" Grid.Column="0" Grid.Row="1" HorizontalTextAlignment="End"/>
-                            
+
                             <Entry Text="{Binding WifiSsid}" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" MaxLength="32"/>
                             <Entry Text="{Binding WifiPassword}" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="2" MaxLength="64"/>
 
                         </Grid>
                     </StackLayout>
                 </Frame>
-
-                <!--MQTT COnfiguration-->
+                
+                <!--Enable device-->
                 <Frame>
                     <StackLayout>
-                        <Label Text="MQTT" FontSize="Body"/>
+                        <Label Text="Device" FontAttributes="Bold"/>
                         <Grid>
-                            <Label Grid.Column="0" Grid.Row="0" Text="Host" HorizontalTextAlignment="End"/>
-                            <Label Grid.Column="0" Grid.Row="1" Text="Port" HorizontalTextAlignment="End"/>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <Label Text="Device 1" Grid.Row="0" Grid.Column="0" HorizontalOptions="End"/>
+                            <Label Text="Device 2" Grid.Row="1" Grid.Column="0" HorizontalOptions="End"/>
+                            <Label Text="Device 3" Grid.Row="2" Grid.Column="0" HorizontalOptions="End"/>
 
-                            <Entry x:Name="entry_mqtt_host" Text="{Binding MqttHost}" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2"/>
-                            <Entry x:Name="entry_mqtt_port" Text="{Binding MqttPort}" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan ="2" Keyboard="Numeric"/>
+                            <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding DeviceEnable1}" HorizontalOptions="End"/>
+                            <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding DeviceEnable2}" HorizontalOptions="End"/>
+                            <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding DeviceEnable3}" HorizontalOptions="End"/>
+
+                            <Entry Grid.Row="0" Grid.Column="2" MaxLength="10" IsEnabled="{Binding DeviceEnable1}" Text="{Binding DeviceToken1}"/>
+                            <Entry Grid.Row="1" Grid.Column="2" MaxLength="10" IsEnabled="{Binding DeviceEnable2}" Text="{Binding DeviceToken2}"/>
+                            <Entry Grid.Row="2" Grid.Column="2" MaxLength="10" IsEnabled="{Binding DeviceEnable3}" Text="{Binding DeviceToken3}"/>
                         </Grid>
-                        
-                        <StackLayout Orientation="Horizontal">
-                            <Label Text="URI "/>
-                            <Label>
-                                <Label.Text>
-                                    <MultiBinding StringFormat="mqtts://{0}:{1}">
-                                        <Binding Source="{x:Reference entry_mqtt_host}" Path="Text"/>
-                                        <Binding Source="{x:Reference entry_mqtt_port}" Path="Text"/>
-                                    </MultiBinding>
-                                </Label.Text>
-                            </Label>
-                        </StackLayout>
-
-                        <Grid>
-                            <Label Text="MQTT CA data" HorizontalTextAlignment="Start"/>
-                            <Button Text="Load" Grid.Column="1" Clicked="Button_Clicked"/>
-                        </Grid>
-                        
-                        
-                        <ScrollView HeightRequest="200">
-                            <Editor AutoSize="TextChanges" Text="{Binding CaData}" FontSize="Micro" BackgroundColor="LightGray" IsReadOnly="True"/>
-                        </ScrollView>
-
-
-                        
                     </StackLayout>
                 </Frame>
-                
+
                 <!--Work hour configure-->
                 <Frame>
                     <StackLayout>
-                        <Label Text="Work hours"/>
+                        <Label Text="Work hours" FontAttributes="Bold"/>
                         <Grid>
                             <Label Text="Hour 1" Grid.Column="0" Grid.Row="0" HorizontalTextAlignment="End"/>
                             <Label Text="Hour 2" Grid.Column="0" Grid.Row="1" HorizontalTextAlignment="End"/>
@@ -172,9 +159,9 @@
                             <Label Text="{Binding Source={x:Reference entry_wh2}, Path=Text, StringFormat='({0}h)'}" Grid.Column="1" Grid.Row="1" HorizontalOptions="Start"/>
                             <Label Text="{Binding Source={x:Reference entry_wh3}, Path=Text, StringFormat='({0}h)'}" Grid.Column="1" Grid.Row="2" HorizontalOptions="Start"/>
 
-                            <Entry x:Name="entry_wh1" Text="{Binding WorkHour1}" Grid.Row="0" Grid.Column="2" Keyboard="Numeric"/>
-                            <Entry x:Name="entry_wh2" Text="{Binding WorkHour2}" Grid.Row="1" Grid.Column="2" Keyboard="Numeric"/>
-                            <Entry x:Name="entry_wh3" Text="{Binding WorkHour3}" Grid.Row="2" Grid.Column="2" Keyboard="Numeric"/>
+                            <Entry x:Name="entry_wh1" Text="{Binding WorkHour1}" Grid.Row="0" Grid.Column="2" Keyboard="Numeric" IsEnabled="{Binding DeviceEnable1}"/>
+                            <Entry x:Name="entry_wh2" Text="{Binding WorkHour2}" Grid.Row="1" Grid.Column="2" Keyboard="Numeric" IsEnabled="{Binding DeviceEnable2}"/>
+                            <Entry x:Name="entry_wh3" Text="{Binding WorkHour3}" Grid.Row="2" Grid.Column="2" Keyboard="Numeric" IsEnabled="{Binding DeviceEnable3}"/>
                         </Grid>
                     </StackLayout>
                 </Frame>
@@ -182,40 +169,28 @@
                 <!--Temperature configuration-->
                 <Frame>
                     <StackLayout>
-                        <Label Text="Temperature"/>
+                        <Label Text="Temperature" FontAttributes="Bold"/>
                         <Grid>
-                            <Label Text="NTC 1" Grid.Row="0" Grid.Column="1"/>
-                            <Label Text="NTC 2" Grid.Row="1" Grid.Column="1"/>
-                            <Label Text="NTC 3" Grid.Row="2" Grid.Column="1"/>
+                            <Label Text="Value" Grid.Row="0" Grid.Column="1"/>
+                            <Label Text="Offset" Grid.Row="0" Grid.Column="2"/>
+                            <Label Text="Limit" Grid.Row="0" Grid.Column="3"/>
 
-                            <Label Text="{Binding NtcTemp1, StringFormat='{0}&#186;C'}" Grid.Row="0" Grid.Column="2"/>
-                            <Label Text="{Binding NtcTemp2, StringFormat='{0}&#186;C'}" Grid.Row="1" Grid.Column="2"/>
-                            <Label Text="{Binding NtcTemp3, StringFormat='{0}&#186;C'}" Grid.Row="2" Grid.Column="2"/>
+                            <Label Text="NTC 1" Grid.Row="1" Grid.Column="0"/>
+                            <Label Text="NTC 2" Grid.Row="2" Grid.Column="0"/>
+                            <Label Text="NTC 3" Grid.Row="3" Grid.Column="0"/>
+
+                            <Label Text="{Binding NtcTemp1, StringFormat='{0}&#186;C'}" Grid.Row="1" Grid.Column="1"/>
+                            <Label Text="{Binding NtcTemp2, StringFormat='{0}&#186;C'}" Grid.Row="2" Grid.Column="1"/>
+                            <Label Text="{Binding NtcTemp3, StringFormat='{0}&#186;C'}" Grid.Row="3" Grid.Column="1"/>
                             
-                            
-                            <Label Text="Offset" Grid.Row="3" Grid.Column="1"/>
-                            <Grid Grid.Row="3" Grid.Column="2">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition/>
-                                    <ColumnDefinition Width="auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Label Text="&#186;C" Grid.Column="1"/>
-                                <Entry Text="{Binding NtcTempOffset}"/>    
-                            </Grid>
-                            
-                            <Button x:Name="btnTempOffset" Text="Preview" Grid.Row="5" Grid.Column="2" Clicked="btnTempOffset_Clicked"/>
-                                
-                            <Label Text="Limit" Grid.Row="4" Grid.Column="1"/>
-                            
-                            <Grid  Grid.Column="2" Grid.Row="4">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition/>
-                                    <ColumnDefinition Width="auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Entry Text="{Binding TempLimit}" Grid.Column="0"/>
-                                <Label Text="&#186;C" Grid.Column="1"/>
-                            </Grid>
-                            
+                            <!--Offet-->
+                            <Entry Grid.Row="1" Grid.Column="2" IsEnabled="{Binding DeviceEnable1}" Text="{Binding NtcTempOffset1}"/>
+                            <Entry Grid.Row="2" Grid.Column="2" IsEnabled="{Binding DeviceEnable2}" Text="{Binding NtcTempOffset2}"/>
+                            <Entry Grid.Row="3" Grid.Column="2" IsEnabled="{Binding DeviceEnable3}" Text="{Binding NtcTempOffset3}"/>
+                            <!--Limit-->
+                            <Entry Grid.Row="1" Grid.Column="3" IsEnabled="{Binding DeviceEnable1}" Text="{Binding TempLimit1}"/>
+                            <Entry Grid.Row="2" Grid.Column="3" IsEnabled="{Binding DeviceEnable2}" Text="{Binding TempLimit2}"/>
+                            <Entry Grid.Row="3" Grid.Column="3" IsEnabled="{Binding DeviceEnable3}" Text="{Binding TempLimit3}"/>
                         </Grid>
                     </StackLayout>
                 </Frame>
@@ -223,7 +198,7 @@
                 <!--Digital input status-->
                 <Frame>
                     <StackLayout>
-                        <Label Text="Digital Input"/>
+                        <Label Text="Digital Input" FontAttributes="Bold"/>
                         <Grid>
                             <Label Text="Input 1:" Grid.Row="0" Grid.Column="1"/>
                             <Label Text="Input 2:" Grid.Row="1" Grid.Column="1"/>

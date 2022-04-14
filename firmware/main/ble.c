@@ -50,7 +50,7 @@ static bool                 sync_enable         = false;
 static uint8_t              connection_type     = CONNECTION_NONE;
 static bool                 is_notify           = 0;
 // static uint8_t              ca_file[2048];
-static uint16_t             ca_write_index;
+// static uint16_t             ca_write_index;
 static SemaphoreHandle_t    send_block;
 static uint8_t              ble_data[BLE_PTC_DATA_SIZE];
 static uint8_t              char1_str[]         = {0x11, 0x22, 0x33};
@@ -690,9 +690,13 @@ static void received_handle(uint8_t* data, uint8_t len)
             return;
         }
         uint32_t* wh = (uint32_t*)pack.datas;
-        ESP_LOGI(GATTS_TAG, "%d, %d, %d", wh[0], wh[1], wh[2]);
+        ESP_LOGI(GATTS_TAG, "%u, %u, %u", wh[0], wh[1], wh[2]);
         if(UCFG_write_work_hour(wh) == false)
         {
+            for(uint8_t i = 0; i < NUMBER_OF_CHANNEL; i++)
+            {
+                work_hours[i] = wh[i];
+            }
             ble_res_failure(pack.cmd);
         }
         else
@@ -731,57 +735,31 @@ static void received_handle(uint8_t* data, uint8_t len)
         return;
     }
 
-    if(pack.cmd == BLE_CMD_MQTT_PORT)
-    {
-        uint16_t* port = (uint16_t*)pack.datas;
-        
-        if(pack.len < 2)
-        {
-            ESP_LOGE(GATTS_TAG, "CMD: %d, len: %d invalid", pack.cmd, pack.len);
-            ble_res_failure(pack.cmd);
-            return;
-        }
-
-        ESP_LOGI(GATTS_TAG, "Write MQTT port: %d", port[0]);
-        if(UCFG_write_mqtt_port(port[0]))
-        {
-            ble_res_success(pack.cmd);
-        }
-        else
-        {
-            ble_res_failure(pack.cmd);
-        }
-        
-        return;
-    }
-
-    if(pack.cmd == BLE_CMD_MQTT_HOST)
-    {
-        ESP_LOGI(GATTS_TAG, "Write MQTT host: %s", pack.datas);
-        if(UCFG_write_mqtt_host(pack.datas, pack.len))
-        {
-            ble_res_success(pack.cmd);
-        }
-        else
-        {
-            ble_res_failure(pack.cmd);
-        }
-        return;
-    }
-
     if(pack.cmd == BLE_CMD_TEMP_OFFSET)
     {
-        if(pack.len == 0 || pack.len < 4){
+        if(pack.len == 0 || pack.len < 12){
             ESP_LOGE(GATTS_TAG, "CMD: %d, len: %d invalid", pack.cmd, pack.len);
             ble_res_failure(pack.cmd);
             return;
         }
 
         float* value = (float*)&pack.datas[0];
-
-        ESP_LOGI(GATTS_TAG, "Write temp offset: %f", value[0]);
-        if(UCFG_write_temp_offset(value[0]))
+        for(uint8_t i = 0; i < NUMBER_OF_CHANNEL; i++)
         {
+            if((value[i] < -5.0f) || (value[i] > 5.0f))
+            {
+                ble_res_failure(pack.cmd);
+                break;
+            }
+        }
+
+        ESP_LOGI(GATTS_TAG, "Write temp offset: %f, %f, %f", value[0], value[1], value[2]);
+        if(UCFG_write_temp_offset(value))
+        {
+            for (uint8_t i = 0; i < NUMBER_OF_CHANNEL; i++)
+            {
+                temp_offset[i] = value[i];
+            }
             ble_res_success(pack.cmd);
         }
         else
@@ -794,15 +772,19 @@ static void received_handle(uint8_t* data, uint8_t len)
 
     if(pack.cmd == BLE_CMD_TEMP_LIMIT)
     {
-        if(pack.len == 0){
+        if(pack.len < 3){
             ESP_LOGE(GATTS_TAG, "CMD: %d, len: %d invalid", pack.cmd, pack.len);
             ble_res_failure(pack.cmd);
             return;
         }
 
         ESP_LOGI(GATTS_TAG, "Write temp limit: %d", pack.datas[0]);
-        if(UCFG_write_temp_limit(pack.datas[0]))
+        if(UCFG_write_temp_limit(pack.datas))
         {
+            for(uint8_t i = 0; i < NUMBER_OF_CHANNEL; i++)
+            {
+                temp_limit[i] = pack.datas[i];
+            }
             ble_res_success(pack.cmd);
         }
         else
@@ -831,42 +813,6 @@ static void received_handle(uint8_t* data, uint8_t len)
 
         ESP_LOGI(GATTS_TAG, "Write connection: %s", pack.datas[0] == 1 ? "WIFI" : pack.datas[0] == 2 ? "ETH" : "Unknown");
         connection_type = pack.datas[0];
-        ble_res_success(pack.cmd);
-        return;
-    }
-
-    // CA file
-    if(pack.cmd == BLE_CMD_MQTT_CA_BEGIN)
-    {
-        ca_write_index = 0;
-        memset(mqtt_ca_file, 0x00, sizeof(mqtt_ca_file)); //! Reset data to zero
-        ESP_LOGI(GATTS_TAG, "Write CA begin");
-        ble_res_success(pack.cmd);
-        return;
-    }
-
-    if(pack.cmd == BLE_CMD_MQTT_CA_END)
-    {
-        ESP_LOGI(GATTS_TAG, "Write CA Data: %s, len %d", (const char*)mqtt_ca_file, ca_write_index);
-        if(UCFG_write_mqtt_ca(mqtt_ca_file, strlen((const char*)mqtt_ca_file)))
-        {
-            ble_res_success(pack.cmd);
-        }
-        else
-        {
-            ble_res_failure(pack.cmd);
-        }
-        return;
-    }
-
-    if(pack.cmd == BLE_CMD_MQTT_CA_DATA)
-    {
-        ESP_LOGI(GATTS_TAG, "Get CA Data: len = %d", pack.len);
-        for(uint8_t i = 0; i < pack.len; i++)
-        {
-            mqtt_ca_file[ca_write_index] = pack.datas[i];
-            ca_write_index++;
-        }
         ble_res_success(pack.cmd);
         return;
     }
@@ -907,34 +853,117 @@ static void received_handle(uint8_t* data, uint8_t len)
 
     if(pack.cmd == BLE_CMD_DEVICE_ID)
     {
-        ESP_LOGI(GATTS_TAG, "Get deive id: %s", device_token);
-        BLE_send_data(BLE_CMD_DEVICE_ID, (uint8_t*)device_token, strlen((const char*)device_token));
+        BLE_send_data(BLE_CMD_DEVICE_TOKEN_1, (uint8_t*)device_token_1, strlen((const char*)device_token_1));
+        BLE_send_data(BLE_CMD_DEVICE_TOKEN_2, (uint8_t*)device_token_2, strlen((const char*)device_token_2));
+        BLE_send_data(BLE_CMD_DEVICE_TOKEN_3, (uint8_t*)device_token_3, strlen((const char*)device_token_3));
+        BLE_send_data(BLE_CMD_DEVICE_ENABLE, device_enable, 3);
 
         // send work-hourt
-        uint32_t work_hours[3] = {0};
-        if (UCFG_read_work_hour(work_hours) == false)
-        {
-            ESP_ERROR_CHECK(ESP_FAIL);
-        }
-
         BLE_send_data(BLE_CMD_WORK_HOUR, (uint8_t*)work_hours, sizeof(uint32_t)*3);
 
         // send temp offset
-        float toffset;
-        uint8_t tlimit;
+        BLE_send_data(BLE_CMD_TEMP_LIMIT, temp_limit, 3);
+        BLE_send_data(BLE_CMD_TEMP_OFFSET, (uint8_t*)temp_offset, 12);
 
-        if (UCFG_read_temp_limit(&tlimit) == false)
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_DEVICE_TOKEN_1)
+    {
+        if(pack.len != 10)
         {
-            ESP_ERROR_CHECK(ESP_FAIL);
+            ESP_LOGE(GATTS_TAG, "CMD: %d, len: %d invalid", pack.cmd, pack.len);
+            ble_res_failure(pack.cmd);
+            return;
         }
-        BLE_send_data(BLE_CMD_TEMP_LIMIT, &tlimit, 1);
-
-        if (UCFG_read_temp_offset(&toffset) == false)
+        ESP_LOGI(GATTS_TAG, "Device token 1: %s", pack.datas);
+        
+        if(UCFG_write_device_token(0, pack.datas))
         {
-            ESP_ERROR_CHECK(ESP_FAIL);
+            for (size_t i = 0; i < pack.len; i++)
+            {
+                device_token_1[i] = pack.datas[i];
+            }
+            ble_res_success(pack.cmd);
         }
-        BLE_send_data(BLE_CMD_TEMP_OFFSET, (uint8_t*)&toffset, 4);
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
+        return;
+    }
 
+    if (pack.cmd == BLE_CMD_DEVICE_TOKEN_2)
+    {
+        if(pack.len != 10)
+        {
+            ESP_LOGE(GATTS_TAG, "CMD: %d, len: %d invalid", pack.cmd, pack.len);
+            ble_res_failure(pack.cmd);
+            return;
+        }
+
+        ESP_LOGI(GATTS_TAG, "Device token 2: %s", pack.datas);
+        if (UCFG_write_device_token(1, pack.datas))
+        {
+            for (size_t i = 0; i < pack.len; i++)
+            {
+                device_token_2[i] = pack.datas[i];
+            }
+            ble_res_success(pack.cmd);
+        }
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
+        return;
+    }
+
+    if (pack.cmd == BLE_CMD_DEVICE_TOKEN_3)
+    {
+        if(pack.len != 10)
+        {
+            ESP_LOGE(GATTS_TAG, "CMD: %d, len: %d invalid", pack.cmd, pack.len);
+            ble_res_failure(pack.cmd);
+            return;
+        }
+
+        ESP_LOGI(GATTS_TAG, "Device token 3: %s", pack.datas);
+        if (UCFG_write_device_token(3, pack.datas))
+        {
+            for (size_t i = 0; i < pack.len; i++)
+            {
+                device_token_3[i] = pack.datas[i];
+            }
+            ble_res_success(pack.cmd);
+        }
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
+        return;
+    }
+
+    if(pack.cmd == BLE_CMD_DEVICE_ENABLE)
+    {
+        if(pack.len < 3)
+        {
+            ESP_LOGE(GATTS_TAG, "CMD: %d, len: %d invalid", pack.cmd, pack.len);
+            ble_res_failure(pack.cmd);
+            return;
+        }
+
+        if(UCFG_write_device_enable(pack.datas))
+        {
+            for(uint8_t i = 0; i < NUMBER_OF_CHANNEL; i++)
+            {
+                device_enable[i] = pack.datas[i];
+            }
+            ble_res_success(pack.cmd);
+        }
+        else
+        {
+            ble_res_failure(pack.cmd);
+        }
         return;
     }
 }   

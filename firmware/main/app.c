@@ -20,7 +20,6 @@
 
 #define APP_TAG  "APP"
 
-#define NUMBER_OF_CHANNEL           3
 #define LED_BLINK_PERIOD_ON_CONFIG  100         //! ms
 #define LED_BLINK_PERIOD_ON_APP     500         //! ms
 #define TEMPERATURE_SCAN_PERIOD     10000       //! ms, 10 sec
@@ -45,21 +44,25 @@ static void network_connected(void);            //! network conected callback
 static void network_disconnected(void);         //! network disconnected callback
 static void enter_config(void);                 //! initialize to enter configuration mode
 static void work_hour_commit(void);             //! Save work-hour to flash
-static void mqtt_temp_alert(float* temp);       //! Publish temperature alert to MQTT broker
-static void mqtt_work_hours(uint32_t* hours);   //! Update the work-hour as period to MQTT broker
+static void mqtt_temp_alert(uint8_t channel, float temp);       //! Publish temperature alert to MQTT broker
+static void mqtt_work_hours(uint8_t channel, uint32_t hours);   //! Update the work-hour as period to MQTT broker
 
 static bool     on_config        = false;                       //! ON configuration mode run with bluetooth only
 static uint32_t led_blink_period = LED_BLINK_PERIOD_ON_CONFIG;  //! LED blink period
 static uint8_t  led_ctrl         = LED_BLINK;                   //! LED control state
 
-static uint32_t work_hours[NUMBER_OF_CHANNEL];      //! Current work-hour count, sec
+uint32_t work_hours[NUMBER_OF_CHANNEL];      //! Current work-hour count, sec
+float    temp_offset[3];                     //! Temperature offset value  
+uint8_t  temp_limit[3];                     //! Temperaure limit to take alarm value.
 static uint32_t work_hour_olds[NUMBER_OF_CHANNEL];  //! Last work-hour count, sec
-static float    temp_offset;                        //! Temperature offset value  
-static uint8_t  temp_limit;                         //! Temperaure limit to take alarm value.
 
 static char mqtt_temp_alert_topic[32];  //! MQTT alert topic
 static char mqtt_work_hour_topic[32];   //! MQTT work-hour topic
-char        device_token[11];           //! Device ID, use as token on publish topic to MQTT broker
+char        device_token_1[11];
+char        device_token_2[11];
+char        device_token_3[11];
+uint8_t     device_enable[4];
+uint8_t     device_enable_old[4];
 
 void APP_init(void)
 {
@@ -67,28 +70,67 @@ void APP_init(void)
     NTC_init();     //! NTC sensor initialize
     UCFG_init();    //! User configure initialize
 
-    //! Get MAC address as device token
-    uint8_t mac_address[6] = {0};
-    ESP_ERROR_CHECK(esp_read_mac(mac_address, ESP_MAC_WIFI_STA));
-    memset(mqtt_temp_alert_topic, 0x00, sizeof(mqtt_temp_alert_topic));
-    memset(mqtt_work_hour_topic, 0x00, sizeof(mqtt_work_hour_topic));
-    memset(device_token, 0x00, sizeof(device_token));
+    if(UCFG_read_device_token(0, (uint8_t*)device_token_1) == false)
+    {
+        ESP_ERROR_CHECK(ESP_FAIL);
+    }
+    if(UCFG_read_device_token(1, (uint8_t*)device_token_2) == false)
+    {
+        ESP_ERROR_CHECK(ESP_FAIL);
+    }
+    if(UCFG_read_device_token(2, (uint8_t*)device_token_3) == false)
+    {
+        ESP_ERROR_CHECK(ESP_FAIL);
+    }
 
-    snprintf(device_token, sizeof(device_token), "%02X%02X%2X%02X%02X",
-             mac_address[1],
-             mac_address[2],
-             mac_address[3],
-             mac_address[4],
-             mac_address[5]);
+    ESP_LOGI(APP_TAG, "Device token: %s,%s,%s", device_token_1, device_token_2, device_token_3);
+    if(UCFG_read_device_enable(device_enable) == false)
+    {
+        ESP_ERROR_CHECK(ESP_FAIL);
+    }
+    ESP_LOGI(APP_TAG, "Device enable: %d,%d,%d", device_enable[0], device_enable[1], device_enable[2]);
 
-    snprintf(mqtt_temp_alert_topic, sizeof(mqtt_temp_alert_topic), "alert/discharge_temp/%s", device_token);
-    snprintf(mqtt_work_hour_topic , sizeof(mqtt_work_hour_topic) , "update/hours/%s", device_token);
+    if(UCFG_read_device_enable_old(device_enable_old) == false)
+    {
+        ESP_ERROR_CHECK(ESP_FAIL);
+    }
 
-    ESP_LOGI(APP_TAG, "topic: %s", mqtt_temp_alert_topic);
-    ESP_LOGI(APP_TAG, "topic: %s", mqtt_work_hour_topic);
+    if(UCFG_read_temp_offset(temp_offset) == false)
+    {
+        ESP_ERROR_CHECK(ESP_FAIL);
+    }
+
+    if(UCFG_read_temp_limit(temp_limit) == false)
+    {
+        ESP_ERROR_CHECK(ESP_FAIL);
+    }
+
+    //! Update last work_hour
+    if(UCFG_read_work_hour(work_hours) == false)
+    {
+        ESP_ERROR_CHECK(ESP_FAIL); 
+    }
+
+    
+
+    for(uint8_t i = 0;i < NUMBER_OF_CHANNEL; i++)
+    {
+        if(device_enable[i] == 0)
+        {
+            temp_offset[i] = 0; // default value
+            temp_limit[i] = 95;    // default value
+            work_hours[i] = 0;
+        }
+    }
+
+    ESP_LOGI(APP_TAG, "Temp offset: %f,%f,%f", temp_offset[0], temp_offset[1], temp_offset[2]);
+    ESP_LOGI(APP_TAG, "Temp limit: %d, %d, %d", temp_limit[0], temp_limit[1],temp_limit[2]);
+    ESP_LOGI(APP_TAG, "Last work-hour: %d, %d, %d", work_hours[0], work_hours[1], work_hours[2]);
+
+    uint8_t dev_en = device_enable[0] + device_enable[1] + device_enable[2];
 
     //! First boot application if button pressed enter configuration mode.
-    if(DIO_button_state() == BUTTON_PRESSED)
+    if((DIO_button_state() == BUTTON_PRESSED) || (dev_en == 0))
     {
         ESP_LOGI(APP_TAG, "Button Enter configure");
         enter_config();
@@ -133,19 +175,6 @@ void APP_init(void)
 
 void APP_run(void)
 {
-    if(UCFG_read_temp_offset(&temp_offset) == false)
-    {
-        ESP_ERROR_CHECK(ESP_FAIL);
-    }
-
-    ESP_LOGI(APP_TAG, "Temp offset: %f", temp_offset);
-
-    if(UCFG_read_temp_limit(&temp_limit) == false)
-    {
-        ESP_ERROR_CHECK(ESP_FAIL);
-    }
-    ESP_LOGI(APP_TAG, "Temp limit: %d", temp_limit);
-
     uint32_t temp_period = esp_log_timestamp();
 
     while (true)
@@ -192,14 +221,6 @@ void APP_run(void)
 static void main_handle(void* param)
 {
     (void)param;
-
-    //! Update last work_hour
-    if(UCFG_read_work_hour(work_hours) == false)
-    {
-        ESP_ERROR_CHECK(ESP_FAIL); 
-    }
-
-    ESP_LOGI(APP_TAG, "Last work-hour: %d, %d, %d", work_hours[0], work_hours[1], work_hours[2]);
     for(uint8_t i = 0; i < NUMBER_OF_CHANNEL; i++)
     {
         work_hour_olds[i] = work_hours[i];
@@ -213,9 +234,13 @@ static void main_handle(void* param)
         uint32_t time = (uint32_t)(esp_log_timestamp() - one_sec_hold);
         if(time >= WORK_HOUR_UPDATE_PERIOD)
         {
-            uint8_t publish_flag = 0;
-            for(uint8_t i = 0; i < 3; i++)
+            for(uint8_t i = 0; i < NUMBER_OF_CHANNEL; i++)
             {
+                if(device_enable[i] == 0)
+                {
+                    continue;
+                }
+
                 if(DIO_status(i) == STATUS_ACTIVE)
                 {
                     work_hours[i]++;
@@ -226,23 +251,17 @@ static void main_handle(void* param)
                     if((work_hours[i] % 5) == 0)
                     // if((work_hours[i] % WORK_HOUR_SYNC_PERIOD) == 0)
                     {
-                        publish_flag |= 1;
+                        mqtt_work_hours(i, work_hours[i]);                    
                     }
                 }
+
+                sec_count++;
+                if ((sec_count % WORK_HOUR_STORE_PERIOD) == 0)
+                {
+                    ESP_LOGI(APP_TAG, "[%d]Save work-hour", sec_count);
+                    work_hour_commit();
+                }
             }       
-
-            if(publish_flag)
-            {
-                mqtt_work_hours(work_hours);
-            }
-
-            sec_count++;
-            if((sec_count  % WORK_HOUR_STORE_PERIOD) == 0)
-            {
-                ESP_LOGI(APP_TAG, "[%d]Save work-hour", sec_count);
-                work_hour_commit();
-            }
-
             one_sec_hold = esp_log_timestamp();
         }
 
@@ -319,10 +338,57 @@ static void led_handle(void)
 
 static void mqtt_evt(uint8_t connect)
 {
+    static bool notify_device_en = false;
     if(connect)
     {
         ESP_LOGI(APP_TAG, "MQTT connected");
         led_ctrl =  LED_ON;
+
+        if (notify_device_en == false)
+        {
+            for (uint8_t i = 0; i < NUMBER_OF_CHANNEL; i++)
+            {
+                if (device_enable[i] != device_enable_old[i])
+                {
+                    char buf[32] = {0};
+
+                    switch (i)
+                    {
+                    case 0:
+                        snprintf(buf, sizeof(buf), "enable/%s", device_token_1);
+                        break;
+                    case 1:
+                        snprintf(buf, sizeof(buf), "enable/%s", device_token_2);
+                        break;
+                    case 2:
+                        snprintf(buf, sizeof(buf), "enable/%s", device_token_3);
+                        break;
+                    default:
+                        break;
+                    }
+
+                    if (device_enable[i])
+                    {
+                        const char *data = "{\"enable\": 1}";
+                        MQTT_publish((const char *)buf, data, strlen(data));
+                    }
+                    else
+                    {
+                        const char *data = "{\"enable\": 0}";
+                        MQTT_publish((const char *)buf, data, strlen(data));
+                    }
+
+                    device_enable_old[i] = device_enable[i];
+                }
+            }
+
+            if(UCFG_write_device_enable_old(device_enable_old) == false)
+            {
+                ESP_ERROR_CHECK(ESP_FAIL);
+            }
+
+            notify_device_en = true;
+        }
     }
     else 
     {
@@ -366,6 +432,7 @@ static void work_hour_commit(void)
     {
         if(work_hour_olds[i] != work_hours[i])
         {
+            work_hour_olds[i] = work_hours[i];
             break;
         }
     }
@@ -373,18 +440,13 @@ static void work_hour_commit(void)
     if(i == NUMBER_OF_CHANNEL)
     {
         //! Nothing update
+        ESP_LOGI(APP_TAG, "Work-hour nothing to update");
         return;
     }
 
     // FIXME Just for test.
-    ESP_LOGI(APP_TAG, "Update work-hours");
-    return;
-
-    //! Update old work-hour
-    for(i = 0; i < NUMBER_OF_CHANNEL; i++)
-    {
-        work_hour_olds[i] = work_hours[i];
-    }
+    // ESP_LOGI(APP_TAG, "Update work-hours");
+    // return;
 
     //! storage
     if(UCFG_write_work_hour(work_hours) == false)
@@ -400,20 +462,25 @@ static void temp_handle(void)
     static uint32_t temp_period[NUMBER_OF_CHANNEL]  = {0};
     static uint8_t is_publish[NUMBER_OF_CHANNEL]    = {0};
 
-    float temps[NUMBER_OF_CHANNEL] = {25.0f};
-    uint8_t publish = 0;
+    float temps[NUMBER_OF_CHANNEL] = {0};
+    uint8_t publish[NUMBER_OF_CHANNEL] = {0};
     
     for(uint8_t i = 0; i < NUMBER_OF_CHANNEL; i++)
     {
-        temps[i] = NTC_read(i) + temp_offset;
+        if(device_enable[i] == 0)
+        {
+            continue;
+        }
 
-        if(temps[i] >= temp_limit)
+        temps[i] = NTC_read(i) + temp_offset[i];
+        if(temps[i] >= temp_limit[i])
         {
             alarms[i] = 1;
         }
         else
         {
             alarms[i]     = 0;
+            alarm_olds[i] = 0;
             is_publish[i] = 0;
         }
 
@@ -423,7 +490,7 @@ static void temp_handle(void)
             temp_period[i] = esp_log_timestamp();
         }
 
-        if(alarms[i])
+        if(alarms[i] && (is_publish[i] == 0))
         {
             uint32_t time = (uint32_t)(esp_log_timestamp() - temp_period[i]);
 
@@ -433,34 +500,47 @@ static void temp_handle(void)
             // if(time >= TEMPERATURE_DELAY_ALERT)
             if(time >= 5000)    // Test for 5 sec
             {
-                if(is_publish[i] == 0)
-                {
-                    is_publish[i] = 1;
-                    publish |= 1;
-                }
+                is_publish[i] = 1;
+                publish[i] = 1;
             }
+        }
+
+        if(publish[i])
+        {
+            mqtt_temp_alert(i, temps[i]);
         }
     }
 
     ESP_LOGI(APP_TAG, "Temperature update: %f, %f, %f", temps[0], temps[1], temps[2]);
-
-    if(publish && on_config == 0)
-    {
-        mqtt_temp_alert(temps);
-    }
 }
 
-static void mqtt_temp_alert(float *temp)
+static void mqtt_temp_alert(uint8_t channel, float temp)
 {
-    char buff[64] = {0};
-    //{"alert": [1, 0, 0],"value": [123, 123, 123]}
-    uint8_t di[3] = {0};
-    for(uint8_t i = 0; i < 3; i++)
+    if(channel >= NUMBER_OF_CHANNEL)
     {
-        di[i] = (temp[i] >= temp_limit) ? 1 : 0;
+        ESP_ERROR_CHECK(ESP_FAIL);
     }
 
-    snprintf(buff, sizeof(buff), "{\"alert\": [%d, %d, %d],\"value\": [%0.2f, %0.2f, %0.2f]}", di[0], di[1], di[2], temp[0], temp[1], temp[2]);
+    char buff[32] = {0};
+    //{"value": 95}
+    
+    memset(mqtt_temp_alert_topic, 0x00, sizeof(mqtt_temp_alert_topic));
+    snprintf(buff, sizeof(buff), "{\"value\":%f}", temp);
+    switch (channel)
+    {
+    case 0:
+        snprintf(mqtt_temp_alert_topic, sizeof(mqtt_temp_alert_topic), "alert/discharge_temp/%s", device_token_1);
+        break;
+    case 1:
+        snprintf(mqtt_temp_alert_topic, sizeof(mqtt_temp_alert_topic), "alert/discharge_temp/%s", device_token_2);
+        break;
+    case 2:
+        snprintf(mqtt_temp_alert_topic, sizeof(mqtt_temp_alert_topic), "alert/discharge_temp/%s", device_token_3);
+        break;
+    default:
+        break;
+    }
+
     if(MQTT_publish(mqtt_temp_alert_topic, buff, strlen(buff)) == false)
     {
         ESP_LOGE(APP_TAG, "Send temp alert failure");
@@ -471,17 +551,31 @@ static void mqtt_temp_alert(float *temp)
     }
 }
 
-static void mqtt_work_hours(uint32_t *hours)
+static void mqtt_work_hours(uint8_t channel, uint32_t hours)
 {
-    //{"value": [123, 123, 123]}
-
-    if(hours == NULL)
+    //{"value": 123}
+    if(channel >= NUMBER_OF_CHANNEL)
     {
         ESP_ERROR_CHECK(ESP_FAIL);
     }
 
-    char buff[64] = {0};
-    snprintf(buff, sizeof(buff), "{\"value\": [%u, %u, %u]}", hours[0], hours[1], hours[2]);
+    char buff[32] = {0};
+    snprintf(buff, sizeof(buff), "{\"value\": %u}", hours);
+    switch (channel)
+    {
+    case 0:
+        snprintf(mqtt_work_hour_topic, sizeof(mqtt_work_hour_topic), "update/hours/%s", device_token_1);
+        break;
+    case 1:
+        snprintf(mqtt_work_hour_topic, sizeof(mqtt_work_hour_topic), "update/hours/%s", device_token_2);
+        break;
+    case 2:
+        snprintf(mqtt_work_hour_topic, sizeof(mqtt_work_hour_topic), "update/hours/%s", device_token_3);
+        break;
+    default:
+        break;
+    }
+
     if (MQTT_publish(mqtt_work_hour_topic, buff, strlen(buff)) == false)
     {
         ESP_LOGE(APP_TAG, "Send temp alert failure");

@@ -25,15 +25,17 @@ namespace GridEye.Views
             this.Appearing += MainPage_Appearing;
             this.Disappearing += MainPage_Disappearing;
 
-            vmMainPage.WifiSsid = "wifi ssid";
-            vmMainPage.MqttHost = "192.168.0.1";
-            vmMainPage.MqttPort = "8883";
+            vmMainPage.WifiSsid = "test_wifi";
+            vmMainPage.WifiPassword = "test_password";
             vmMainPage.WorkHour1 = "0";
             vmMainPage.WorkHour2 = "0";
             vmMainPage.WorkHour3 = "0";
-            vmMainPage.NtcTempOffset = "0";
-            vmMainPage.TempLimit = "95";
-            vmMainPage.CaData = "";
+            vmMainPage.NtcTempOffset1 = "0";
+            vmMainPage.NtcTempOffset2 = "0";
+            vmMainPage.NtcTempOffset3 = "0";
+            vmMainPage.TempLimit1 = "95";
+            vmMainPage.TempLimit2 = "95";
+            vmMainPage.TempLimit3 = "95";
         }
 
         private void MainPage_Disappearing(object sender, EventArgs e)
@@ -66,25 +68,23 @@ namespace GridEye.Views
                     break;
                 case Protocol.Command.BLE_CMD_WIFI_PASSWORD:
                     break;
-                case Protocol.Command.BLE_CMD_MQTT_PORT:
-                    break;
-                case Protocol.Command.BLE_CMD_MQTT_HOST:
-                    break;
-                case Protocol.Command.BLE_CMD_MQTT_CA_BEGIN:
-                    break;
-                case Protocol.Command.BLE_CMD_MQTT_CA_DATA:
-                    break;
-                case Protocol.Command.BLE_CMD_MQTT_CA_END:
-                    break;
                 case Protocol.Command.BLE_CMD_TEMP_OFFSET:
                     {
-                        float toffset = BitConverter.ToSingle(packet.Data, 0);
-                        vmMainPage.NtcTempOffset = toffset.ToString();
+                        float[] toffset = new float[3];
+                        for (int i = 0; i < 3; i++)
+                        {
+                            toffset[i] = BitConverter.ToSingle(packet.Data, i * 4);
+                        }
+                        vmMainPage.NtcTempOffset1 = toffset[0].ToString();
+                        vmMainPage.NtcTempOffset2 = toffset[1].ToString();
+                        vmMainPage.NtcTempOffset3 = toffset[2].ToString();
                     }
                     break;
                 case Protocol.Command.BLE_CMD_TEMP_LIMIT:
                     {
-                        vmMainPage.TempLimit = packet.Data[0].ToString();
+                        vmMainPage.TempLimit1 = packet.Data[0].ToString();
+                        vmMainPage.TempLimit2 = packet.Data[1].ToString();
+                        vmMainPage.TempLimit3 = packet.Data[2].ToString();
                     }
                     break;
                 case Protocol.Command.BLE_CMD_CONNECTION:
@@ -142,6 +142,20 @@ namespace GridEye.Views
                         vmMainPage.WorkHour3 = wh_single[2].ToString();
                     }
                     break;
+                case Protocol.Command.BLE_CMD_DEVICE_TOKEN_1:
+                    vmMainPage.DeviceToken1 = Encoding.UTF8.GetString(packet.Data);
+                    break;
+                case Protocol.Command.BLE_CMD_DEVICE_TOKEN_2:
+                    vmMainPage.DeviceToken2 = Encoding.UTF8.GetString(packet.Data);
+                    break;
+                case Protocol.Command.BLE_CMD_DEVICE_TOKEN_3:
+                    vmMainPage.DeviceToken3 = Encoding.UTF8.GetString(packet.Data);
+                    break;
+                case Protocol.Command.BLE_CMD_DEVICE_ENABLE:
+                    vmMainPage.DeviceEnable1 = packet.Data[0] != 0;
+                    vmMainPage.DeviceEnable2 = packet.Data[1] != 0;
+                    vmMainPage.DeviceEnable3 = packet.Data[2] != 0;
+                    break;
                 default:
                     break;
             }
@@ -177,18 +191,18 @@ namespace GridEye.Views
 
         private void btnTempOffset_Clicked(object sender, EventArgs e)
         {
-            tempOffsetPreview = true;
-            try
-            {
-                float offset = float.Parse(vmMainPage.NtcTempOffset);
-                tempOffsetVal = offset;
-            }
-            catch
-            {
-                tempOffsetPreview = false;
-                var toast = DependencyService.Get<Services.IToast>();
-                toast.Show("Temperature offset invalid");
-            }
+            //tempOffsetPreview = true;
+            //try
+            //{
+            //    float offset = float.Parse(vmMainPage.NtcTempOffset);
+            //    tempOffsetVal = offset;
+            //}
+            //catch
+            //{
+            //    tempOffsetPreview = false;
+            //    var toast = DependencyService.Get<Services.IToast>();
+            //    toast.Show("Temperature offset invalid");
+            //}
         }
 
         private void btnWriteConfig_Clicked(object sender, EventArgs e)
@@ -201,14 +215,6 @@ namespace GridEye.Views
                     showItoast("WIFI configure invalid");
                     return;
                 }
-            }
-
-            //! check MQTT
-            if(string.IsNullOrEmpty(vmMainPage.MqttHost) || string.IsNullOrEmpty(vmMainPage.MqttPort) ||
-                string.IsNullOrEmpty(vmMainPage.CaData))
-            {
-                showItoast("MQTT configure invalid");
-                return;
             }
 
             //! Work hour
@@ -226,17 +232,50 @@ namespace GridEye.Views
             }
 
             // Temperature
-            float tempOffset;
-            float tempLimit;
+            float[] tempOffset = new float[3];
+            byte[] tempLimit = new byte[3];
 
             try
             {
-                tempOffset = float.Parse(vmMainPage.NtcTempOffset);
-                tempLimit = float.Parse(vmMainPage.TempLimit); 
+                
+                tempOffset[0] = float.Parse(vmMainPage.NtcTempOffset1);
+                tempOffset[1] = float.Parse(vmMainPage.NtcTempOffset2);
+                tempOffset[2] = float.Parse(vmMainPage.NtcTempOffset3);
+                tempLimit[0] = byte.Parse(vmMainPage.TempLimit1);
+                tempLimit[1] = byte.Parse(vmMainPage.TempLimit2);
+                tempLimit[2] = byte.Parse(vmMainPage.TempLimit3);
             }
             catch (Exception)
             {
-                showItoast("Tmeperature configure invlaid");
+                showItoast("Temperature configure invalid");
+                return;
+            }
+
+            for (int i = 0; i < tempOffset.Length; i++)
+            { 
+                if(tempOffset[i] < -5 || tempOffset[i] > 5)
+                {
+                    showItoast("Temperature offset invalid");
+                    return;
+                }
+            }
+
+            // Device token
+            if(vmMainPage.DeviceEnable1  && vmMainPage.DeviceToken1.Length < 10)
+            {
+                showItoast("Device token invalid");
+                return;
+            }
+
+            if (vmMainPage.DeviceEnable2 && vmMainPage.DeviceToken2.Length < 10)
+            {
+                showItoast("Device token invalid");
+                return;
+            }
+
+            if (vmMainPage.DeviceEnable3 && vmMainPage.DeviceToken3.Length < 10)
+            {
+                showItoast("Device token invalid");
                 return;
             }
 
@@ -248,7 +287,7 @@ namespace GridEye.Views
         //EventWaitHandle eventWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
         Protocol.Command waitCmd = Protocol.Command.BLE_CMD_ACK;
         bool onWriteConfigure = false;
-        private void writeConfigureProcess(float[] work_hour, float tempOffet, float tempLimit)
+        private void writeConfigureProcess(float[] work_hour, float[] tempOffset, byte[] tempLimit)
         {
             Task.Run(() =>
             {
@@ -279,65 +318,6 @@ namespace GridEye.Views
                         }
                     }
 
-                    // MQTT host, uri
-                    string uri = $"mqtts://{vmMainPage.MqttHost}:{vmMainPage.MqttPort}";
-                    var uri_data = Encoding.UTF8.GetBytes(uri);
-                    if (sendConfig(Protocol.Command.BLE_CMD_MQTT_HOST, uri_data, uri.Length) == false)
-                    {
-                        break;
-                    }
-
-                    // MQTT CA data
-                    if (sendConfig(Protocol.Command.BLE_CMD_MQTT_CA_BEGIN, null, 0) == false)
-                    {
-                        break;
-                    }
-
-                    byte[] ca_data = Encoding.UTF8.GetBytes(vmMainPage.CaData);
-                    int index = 0;
-                    bool err = false;
-
-                    byte[] send_buf = new byte[Protocol.Protocol.DATA_SIZE_MAX];
-                    while (true)
-                    {
-                        int len = ca_data.Length - index;
-                        if (len > Protocol.Protocol.DATA_SIZE_MAX)
-                        {
-                            len = Protocol.Protocol.DATA_SIZE_MAX;
-                        }
-
-                        if (len == 0)
-                        {
-                            break;
-                        }
-
-                        for (int i = 0; i < len; i++)
-                        {
-                            send_buf[i] = ca_data[index++];
-                        }
-
-                        if (sendConfig(Protocol.Command.BLE_CMD_MQTT_CA_DATA, send_buf, len) == false)
-                        {
-                            err = true;
-                            break;
-                        }
-
-                        if (len < Protocol.Protocol.DATA_SIZE_MAX)
-                        {
-                            break;
-                        }
-                    }
-
-                    if (err)
-                    {
-                        break;
-                    }
-
-                    if (sendConfig(Protocol.Command.BLE_CMD_MQTT_CA_END, null, 0) == false)
-                    {
-                        break;
-                    }
-
                     // Work hour
                     UInt32[] sec = new UInt32[3];
                     sec[0] = (UInt32)(float.Parse(vmMainPage.WorkHour1) * 3600);
@@ -345,13 +325,13 @@ namespace GridEye.Views
                     sec[2] = (UInt32)(float.Parse(vmMainPage.WorkHour3) * 3600);
 
                     byte[] work_data = new byte[4 * 3];
-                    for (int i = 0; i < 4; i += 4)
+                    for (int i = 0; i < 3; i++)
                     {
-                        var tmp = BitConverter.GetBytes(sec[i]);
-                        work_data[i + 0] = tmp[0];
-                        work_data[i + 1] = tmp[1];
-                        work_data[i + 2] = tmp[2];
-                        work_data[i + 3] = tmp[3];
+                        var wh = BitConverter.GetBytes(sec[i]);
+                        work_data[i * 4 + 0] = wh[0];
+                        work_data[i * 4 + 1] = wh[1];
+                        work_data[i * 4 + 2] = wh[2];
+                        work_data[i * 4 + 3] = wh[3];
                     }
 
                     if (sendConfig(Protocol.Command.BLE_CMD_WORK_HOUR, work_data, work_data.Length) == false)
@@ -360,17 +340,80 @@ namespace GridEye.Views
                     }
 
                     // Temp offset
-                    byte[] toffset_data = BitConverter.GetBytes(float.Parse(vmMainPage.NtcTempOffset));
+                    byte[] toffset_data = new byte[12];
+                    int index = 0;
+
+                    byte[] tmp = BitConverter.GetBytes(tempOffset[0]);
+                    toffset_data[index++] = tmp[0];
+                    toffset_data[index++] = tmp[1];
+                    toffset_data[index++] = tmp[2];
+                    toffset_data[index++] = tmp[3];
+                    tmp = BitConverter.GetBytes(tempOffset[1]);
+                    toffset_data[index++] = tmp[0];
+                    toffset_data[index++] = tmp[1];
+                    toffset_data[index++] = tmp[2];
+                    toffset_data[index++] = tmp[3];
+                    tmp = BitConverter.GetBytes(tempOffset[2]);
+                    toffset_data[index++] = tmp[0];
+                    toffset_data[index++] = tmp[1];
+                    toffset_data[index++] = tmp[2];
+                    toffset_data[index++] = tmp[3];
+
                     if (sendConfig(Protocol.Command.BLE_CMD_TEMP_OFFSET, toffset_data, toffset_data.Length) == false)
                     {
                         break;
                     }
 
                     // Temp limit
-                    byte tlimit = byte.Parse(vmMainPage.TempLimit);
-                    if (sendConfig(Protocol.Command.BLE_CMD_TEMP_LIMIT, new byte[] {tlimit}, 1) == false)
+                    //byte[] tlimit = new byte[3];
+                    //tlimit[0] = byte.Parse(vmMainPage.TempLimit1);
+                    //tlimit[1] = byte.Parse(vmMainPage.TempLimit2);
+                    //tlimit[2] = byte.Parse(vmMainPage.TempLimit3);
+
+                    if (sendConfig(Protocol.Command.BLE_CMD_TEMP_LIMIT, tempLimit, tempLimit.Length) == false)
                     {
                         break;
+                    }
+
+                    // Device enable
+                    byte[] dev_en = new byte[3];
+                    const byte en_ = 1;
+                    const byte dis_ = 0;
+                    dev_en[0] = vmMainPage.DeviceEnable1 ? en_ : dis_;
+                    dev_en[1] = vmMainPage.DeviceEnable2 ? en_ : dis_;
+                    dev_en[2] = vmMainPage.DeviceEnable3 ? en_ : dis_;
+                    if (sendConfig(Protocol.Command.BLE_CMD_DEVICE_ENABLE, dev_en, dev_en.Length) == false)
+                    {
+                        break;
+                    }
+
+                    // Device token
+                    byte[] token;
+                    if (vmMainPage.DeviceEnable1)
+                    {
+                        token = Encoding.UTF8.GetBytes(vmMainPage.DeviceToken1);
+                        if (sendConfig(Protocol.Command.BLE_CMD_DEVICE_TOKEN_1, token, token.Length) == false)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (vmMainPage.DeviceEnable2)
+                    {
+                        token = Encoding.UTF8.GetBytes(vmMainPage.DeviceToken2);
+                        if (sendConfig(Protocol.Command.BLE_CMD_DEVICE_TOKEN_2, token, token.Length) == false)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (vmMainPage.DeviceEnable3)
+                    {
+                        token = Encoding.UTF8.GetBytes(vmMainPage.DeviceToken3);
+                        if (sendConfig(Protocol.Command.BLE_CMD_DEVICE_TOKEN_3, token, token.Length) == false)
+                        {
+                            break;
+                        }
                     }
 
                     // Write configure confirm
@@ -382,7 +425,7 @@ namespace GridEye.Views
                     vmMainPage.ShowProcess = false;
                     showItoastSafe("Write Configure success");
                     break;
-            }
+                }
 
                 onWriteConfigure = false;
             });
@@ -451,39 +494,8 @@ namespace GridEye.Views
         }
 
 
-        private async void Button_Clicked(object sender, EventArgs e)
+        private void Button_Clicked(object sender, EventArgs e)
         {
-            try
-            {
-                var filePicker = await FilePicker.PickAsync();
-                if(filePicker == null)
-                {
-                    showItoast("Choose file failure");
-                    return;
-                }
-
-                if (filePicker.FileName.EndsWith("crt") == false)
-                {
-                    showItoast("File type invalid");
-                    return;
-                }
-
-                var stream = await filePicker.OpenReadAsync();
-                if (stream == null)
-                {
-                    showItoast("Open file failure");
-                    return;
-                }
-
-                using (var reader = new StreamReader(stream))
-                {
-                    vmMainPage.CaData = reader.ReadToEnd();
-                }
-            }
-            catch (Exception)
-            {
-                showItoast("Open file error");
-            }
         }
     }
 }

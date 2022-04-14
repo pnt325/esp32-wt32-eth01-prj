@@ -17,11 +17,6 @@ enum {
     BLE_CMD_CONFIG_COMMIT,          // Save all configure to nvs
     BLE_CMD_WIFI_SSID,              // wifi ssid data
     BLE_CMD_WIFI_PASSWORD,          // wifi password data
-    BLE_CMD_MQTT_PORT,              // mqtt port data 
-    BLE_CMD_MQTT_HOST,              // mqtt host data
-    BLE_CMD_MQTT_CA_BEGIN,          // mqtt CA write begin
-    BLE_CMD_MQTT_CA_DATA,           // mqtt CA data 
-    BLE_CMD_MQTT_CA_END,            // mqtt CA write finish
     BLE_CMD_TEMP_OFFSET,            // temperature offset value
     BLE_CMD_TEMP_LIMIT,             // temperature limit value
     BLE_CMD_CONNECTION,             // connecion type value.
@@ -30,6 +25,10 @@ enum {
     BLE_CMD_WORK_HOUR,              // Set new work-hour
     BLE_CMD_SYNC_ENABLE,
     BLE_CMD_DEVICE_ID,
+    BLE_CMD_DEVICE_TOKEN_1,
+    BLE_CMD_DEVICE_TOKEN_2,
+    BLE_CMD_DEVICE_TOKEN_3,
+    BLE_CMD_DEVICE_ENABLE,
 };
 
  #endif /*_BLE_DATA_H_*/

@@ -2,11 +2,12 @@ key,type,encoding,value
 user_config,namespace,,
 wifi_ssid,data,string,ssid
 wifi_pswd,data,string,password
-mqtt_config,data,u8,0
-mqtt_host,data,string,host
-mqtt_port,data,u16,8883
-mqtt_ca,file,string,C:\Users\phatn\Documents\git_repo\freelance-WT32-ETH01\firmware\main\ca.crt
 work_hours,data,binary,0
 connection,data,u8,0
 temp_offset,data,binary,0
-temp_limit,data,u8,95
+temp_limit,data,binary,95
+device_token_1,data,string,1234567890
+device_token_2,data,string,1234567891
+device_token_3,data,string,1234567892
+device_en,data,u32,0
+device_en_old,data,u32,0
