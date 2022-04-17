@@ -16,7 +16,8 @@ namespace GridEye.Droid.Services
     {
         public bool Enabled()
         {
-            BluetoothAdapter adapter = BluetoothAdapter.DefaultAdapter;
+            var bluetoothManager = Android.App.Application.Context.GetSystemService(Context.BluetoothService) as BluetoothManager;
+            BluetoothAdapter adapter = bluetoothManager.Adapter;
             return adapter.IsEnabled;
         }
 
@@ -25,5 +26,7 @@ namespace GridEye.Droid.Services
             Context context = Application.Context;
             context.StartActivity(new Intent(Android.Provider.Settings.ActionBluetoothSettings).SetFlags(ActivityFlags.NewTask));
         }
+
+
     }
 }

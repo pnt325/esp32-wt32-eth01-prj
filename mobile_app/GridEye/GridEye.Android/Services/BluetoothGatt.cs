@@ -1,6 +1,7 @@
 ﻿using Android.App;
 using Android.Bluetooth;
 using Android.Runtime;
+using Android.Content;
 using GridEye.Services;
 using Java.Util;
 using System;
@@ -45,7 +46,9 @@ namespace GridEye.Droid.Services
                 return;
             }
 
-            device = Android.Bluetooth.BluetoothAdapter.DefaultAdapter.GetRemoteDevice(address);
+            var bluetoothManager = Android.App.Application.Context.GetSystemService(Context.BluetoothService) as BluetoothManager;
+            BluetoothAdapter adapter = bluetoothManager.Adapter;
+            device = adapter.GetRemoteDevice(address);
             this.gatt = device.ConnectGatt(Application.Context, false, this);
             doConnect = false;
         }

@@ -1,5 +1,6 @@
 ﻿using Android.Bluetooth;
 using Android.Bluetooth.LE;
+using Android.Content;
 using Android.Runtime;
 using GridEye.Services;
 using System.Collections.Concurrent;
@@ -39,7 +40,8 @@ namespace GridEye.Droid.Services
                 return false;
             }
 
-            BluetoothAdapter adapter = BluetoothAdapter.DefaultAdapter;
+            var bluetoothManager = Android.App.Application.Context.GetSystemService(Context.BluetoothService) as BluetoothManager;
+            BluetoothAdapter adapter = bluetoothManager.Adapter;
             leScaner = adapter.BluetoothLeScanner;
             if (leScaner == null)
             {
