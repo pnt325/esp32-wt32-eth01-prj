@@ -8,15 +8,35 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
-[assembly: Xamarin.Forms.Dependency(typeof(GridEye.Droid.Services.BLEPermission))]
+[assembly: Xamarin.Forms.Dependency(typeof(GridEye.Droid.Services.BLEPer))]
 namespace GridEye.Droid.Services
 {
-    //internal class BLEPermission
-    //{
-    //}
+    public class BLEPremission : GridEye.Services.IBLEPermission
+    {
+        bool result = false;
+        public async void Request()
+        {
+            var ret = await Xamarin.Essentials.Permissions.RequestAsync<BLEPer>();
+            if(ret == Xamarin.Essentials.PermissionStatus.Granted)
+            {
+                result = true;
+            }
+            else
+            {
+                result = false;
+            }
+        }
 
-    public class BLEPermission : Xamarin.Essentials.Permissions.BasePlatformPermission
+        public bool Result()
+        {
+            return result;
+        }
+    }
+
+
+    public class BLEPer : Xamarin.Essentials.Permissions.BasePlatformPermission
     {
         public override (string androidPermission, bool isRuntime)[] RequiredPermissions => new List<(string androidPermission, bool isRuntime)>
         {

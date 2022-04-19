@@ -30,9 +30,9 @@
 
 enum 
 {   
-    LED_OFF,
-    LED_ON,
-    LED_BLINK
+    LED_OFF,    //! Control LED ON
+    LED_ON,     //! Control LED OFF 
+    LED_BLINK   //! Control LED Blink
 };
 
 static void main_handle(void* param);           //! App handle
@@ -51,9 +51,9 @@ static bool     on_config        = false;                       //! ON configura
 static uint32_t led_blink_period = LED_BLINK_PERIOD_ON_CONFIG;  //! LED blink period
 static uint8_t  led_ctrl         = LED_BLINK;                   //! LED control state
 
-uint32_t work_hours[NUMBER_OF_CHANNEL];      //! Current work-hour count, sec
-float    temp_offset[3];                     //! Temperature offset value  
-uint8_t  temp_limit[3];                     //! Temperaure limit to take alarm value.
+uint32_t work_hours[NUMBER_OF_CHANNEL];             //! Current work-hour count, sec
+float    temp_offset[NUMBER_OF_CHANNEL];            //! Temperature offset value  
+uint8_t  temp_limit[NUMBER_OF_CHANNEL];             //! Temperaure limit to take alarm value.
 static uint32_t work_hour_olds[NUMBER_OF_CHANNEL];  //! Last work-hour count, sec
 
 static char mqtt_temp_alert_topic[32];  //! MQTT alert topic
@@ -74,21 +74,21 @@ void APP_init(void)
     {
         ESP_ERROR_CHECK(ESP_FAIL);
     }
+
     if(UCFG_read_device_token(1, (uint8_t*)device_token_2) == false)
     {
         ESP_ERROR_CHECK(ESP_FAIL);
     }
+
     if(UCFG_read_device_token(2, (uint8_t*)device_token_3) == false)
     {
         ESP_ERROR_CHECK(ESP_FAIL);
     }
 
-    ESP_LOGI(APP_TAG, "Device token: %s,%s,%s", device_token_1, device_token_2, device_token_3);
     if(UCFG_read_device_enable(device_enable) == false)
     {
         ESP_ERROR_CHECK(ESP_FAIL);
     }
-    ESP_LOGI(APP_TAG, "Device enable: %d,%d,%d", device_enable[0], device_enable[1], device_enable[2]);
 
     if(UCFG_read_device_enable_old(device_enable_old) == false)
     {
@@ -105,29 +105,31 @@ void APP_init(void)
         ESP_ERROR_CHECK(ESP_FAIL);
     }
 
-    //! Update last work_hour
     if(UCFG_read_work_hour(work_hours) == false)
     {
         ESP_ERROR_CHECK(ESP_FAIL); 
     }
-
     
-
+    uint8_t dev_en = 0;
     for(uint8_t i = 0;i < NUMBER_OF_CHANNEL; i++)
     {
-        if(device_enable[i] == 0)
+        if(device_enable[i])
         {
-            temp_offset[i] = 0; // default value
-            temp_limit[i] = 95;    // default value
+            dev_en++;
+        }
+        else
+        {
+            temp_offset[i] = 0;     // default value
+            temp_limit[i] = 95;     // default value
             work_hours[i] = 0;
         }
     }
 
+    ESP_LOGI(APP_TAG, "Device token: %s,%s,%s", device_token_1, device_token_2, device_token_3);
+    ESP_LOGI(APP_TAG, "Device enable: %d,%d,%d", device_enable[0], device_enable[1], device_enable[2]);
     ESP_LOGI(APP_TAG, "Temp offset: %f,%f,%f", temp_offset[0], temp_offset[1], temp_offset[2]);
     ESP_LOGI(APP_TAG, "Temp limit: %d, %d, %d", temp_limit[0], temp_limit[1],temp_limit[2]);
     ESP_LOGI(APP_TAG, "Last work-hour: %d, %d, %d", work_hours[0], work_hours[1], work_hours[2]);
-
-    uint8_t dev_en = device_enable[0] + device_enable[1] + device_enable[2];
 
     //! First boot application if button pressed enter configuration mode.
     if((DIO_button_state() == BUTTON_PRESSED) || (dev_en == 0))
@@ -185,18 +187,17 @@ void APP_run(void)
         {
             if (time >= 1000 && BLE_is_notify())
             {
-                float temp[3] = {0};
+                float temp[NUMBER_OF_CHANNEL] = {0};
                 temp[0] = NTC_read(0);
                 temp[1] = NTC_read(1);
                 temp[2] = NTC_read(2);
+                BLE_send_data(BLE_CMD_PROBE_TEMP, (uint8_t *)temp, sizeof(float) * NUMBER_OF_CHANNEL);
 
-                BLE_send_data(BLE_CMD_PROBE_TEMP, (uint8_t *)temp, sizeof(float) * 3);
-
-                uint8_t di[3] = {0};
+                uint8_t di[NUMBER_OF_CHANNEL] = {0};
                 di[0] = DIO_status(0);
                 di[1] = DIO_status(1);
                 di[2] = DIO_status(2);
-                BLE_send_data(BLE_CMD_PROBE_DI, di, 3);
+                BLE_send_data(BLE_CMD_PROBE_DI, di, NUMBER_OF_CHANNEL);
 
                 temp_period = esp_log_timestamp();
             }
@@ -221,6 +222,8 @@ void APP_run(void)
 static void main_handle(void* param)
 {
     (void)param;
+
+    //! Update work-hour old
     for(uint8_t i = 0; i < NUMBER_OF_CHANNEL; i++)
     {
         work_hour_olds[i] = work_hours[i];
@@ -271,12 +274,13 @@ static void main_handle(void* param)
 
 static void btn_handle(void)
 {
-    static uint8_t btn_state = 1;
+    static uint8_t btn_state     = 1;
     static uint8_t btn_state_old = 1;
-    static uint8_t hold_handle = 0;
+    static uint8_t hold_handle   = 0;
+    static uint8_t rise_event    = 0;
     static uint32_t btn_count;
-    static uint8_t rise_event = 0;
 
+    //! On configuration the button behavior do not use
     if(on_config)
     {
         return;
@@ -346,6 +350,7 @@ static void mqtt_evt(uint8_t connect)
 
         if (notify_device_en == false)
         {
+            uint8_t  write_old = 0;
             for (uint8_t i = 0; i < NUMBER_OF_CHANNEL; i++)
             {
                 if (device_enable[i] != device_enable_old[i])
@@ -379,12 +384,16 @@ static void mqtt_evt(uint8_t connect)
                     }
 
                     device_enable_old[i] = device_enable[i];
+                    write_old = 1;
                 }
             }
 
-            if(UCFG_write_device_enable_old(device_enable_old) == false)
+            if (write_old)
             {
-                ESP_ERROR_CHECK(ESP_FAIL);
+                if (UCFG_write_device_enable_old(device_enable_old) == false)
+                {
+                    ESP_ERROR_CHECK(ESP_FAIL);
+                }
             }
 
             notify_device_en = true;
@@ -392,7 +401,7 @@ static void mqtt_evt(uint8_t connect)
     }
     else 
     {
-        ESP_LOGI(APP_TAG, "MQTT disconnected");
+        ESP_LOGW(APP_TAG, "MQTT disconnected");
         led_ctrl = LED_BLINK;
         led_blink_period = LED_BLINK_PERIOD_ON_APP;
     }
@@ -443,10 +452,6 @@ static void work_hour_commit(void)
         ESP_LOGI(APP_TAG, "Work-hour nothing to update");
         return;
     }
-
-    // FIXME Just for test.
-    // ESP_LOGI(APP_TAG, "Update work-hours");
-    // return;
 
     //! storage
     if(UCFG_write_work_hour(work_hours) == false)

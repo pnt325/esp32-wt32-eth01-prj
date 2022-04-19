@@ -17,13 +17,16 @@ namespace GridEye.Droid
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
             global::ZXing.Net.Mobile.Forms.Android.Platform.Init();
-            LoadApplication(new App());
+            
+            var ret = await Xamarin.Essentials.Permissions.RequestAsync<BLEPermission>();
+            if(ret != Xamarin.Essentials.PermissionStatus.Granted)
+            {
+                return;
+            }
 
-            await Xamarin.Essentials.Permissions.RequestAsync<BLEPermission>();
-            //if(blePer != Xamarin.Essentials.PermissionStatus.Granted)
-            //{
-            //}
+            LoadApplication(new App());
         }
+
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {
             Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);

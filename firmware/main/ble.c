@@ -49,8 +49,6 @@ static bool                 is_sync_config      = false;
 static bool                 sync_enable         = false;
 static uint8_t              connection_type     = CONNECTION_NONE;
 static bool                 is_notify           = 0;
-// static uint8_t              ca_file[2048];
-// static uint16_t             ca_write_index;
 static SemaphoreHandle_t    send_block;
 static uint8_t              ble_data[BLE_PTC_DATA_SIZE];
 static uint8_t              char1_str[]         = {0x11, 0x22, 0x33};

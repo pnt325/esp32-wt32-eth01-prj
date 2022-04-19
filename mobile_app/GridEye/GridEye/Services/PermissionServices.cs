@@ -36,6 +36,14 @@ namespace GridEye.Services
                 }
             }
 
+            // Request Bluetooth connection, scan permission
+            //var bleReq = DependencyService.Get<GridEye.Services.IBLEPermission>();
+            //bleReq.Request();
+            //if(bleReq.Result() == false)
+            //{
+            //    Environment.Exit(-1);
+            //}
+
             EnableService();
         }
 
