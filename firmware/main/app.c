@@ -249,10 +249,7 @@ static void main_handle(void* param)
                     work_hours[i]++;
 
                     ESP_LOGI(APP_TAG, "DI Channel %i active", i);
-
-                    // FIXME just for test
-                    if((work_hours[i] % 5) == 0)
-                    // if((work_hours[i] % WORK_HOUR_SYNC_PERIOD) == 0)
+                    if((work_hours[i] % WORK_HOUR_SYNC_PERIOD) == 0)
                     {
                         mqtt_work_hours(i, work_hours[i]);                    
                     }
@@ -498,12 +495,7 @@ static void temp_handle(void)
         if(alarms[i] && (is_publish[i] == 0))
         {
             uint32_t time = (uint32_t)(esp_log_timestamp() - temp_period[i]);
-
-            //! 5 min
-
-            // FIXME Just for test
-            // if(time >= TEMPERATURE_DELAY_ALERT)
-            if(time >= 5000)    // Test for 5 sec
+            if(time >= TEMPERATURE_DELAY_ALERT)
             {
                 is_publish[i] = 1;
                 publish[i] = 1;

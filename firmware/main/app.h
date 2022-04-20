@@ -19,7 +19,7 @@ extern uint8_t     device_enable[4];
 
 extern uint32_t work_hours[NUMBER_OF_CHANNEL];      //! Current work-hour count, sec
 extern float    temp_offset[3];                     //! Temperature offset value  
-extern uint8_t  temp_limit[3];                     //! Temperaure limit to take alarm value.
+extern uint8_t  temp_limit[3];                      //! Temperaure limit to take alarm value.
 
 void APP_init(void);
 void APP_run(void);

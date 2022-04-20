@@ -189,22 +189,6 @@ namespace GridEye.Views
             }
         }
 
-        private void btnTempOffset_Clicked(object sender, EventArgs e)
-        {
-            //tempOffsetPreview = true;
-            //try
-            //{
-            //    float offset = float.Parse(vmMainPage.NtcTempOffset);
-            //    tempOffsetVal = offset;
-            //}
-            //catch
-            //{
-            //    tempOffsetPreview = false;
-            //    var toast = DependencyService.Get<Services.IToast>();
-            //    toast.Show("Temperature offset invalid");
-            //}
-        }
-
         private void btnWriteConfig_Clicked(object sender, EventArgs e)
         {
             //! check connection
@@ -365,11 +349,6 @@ namespace GridEye.Views
                     }
 
                     // Temp limit
-                    //byte[] tlimit = new byte[3];
-                    //tlimit[0] = byte.Parse(vmMainPage.TempLimit1);
-                    //tlimit[1] = byte.Parse(vmMainPage.TempLimit2);
-                    //tlimit[2] = byte.Parse(vmMainPage.TempLimit3);
-
                     if (sendConfig(Protocol.Command.BLE_CMD_TEMP_LIMIT, tempLimit, tempLimit.Length) == false)
                     {
                         break;

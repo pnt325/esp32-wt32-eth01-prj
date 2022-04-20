@@ -126,6 +126,7 @@ void MQTT_init(mqtt_event_cb_t event)
     //! Create semaphore
     publish_block = xSemaphoreCreateMutex();
 
+    //Template: "mqtts://flavio.com:8883"
     const esp_mqtt_client_config_t mqtt_cfg = {
         .uri = "mqtts://192.168.0.105:8883",    // TODO Change it
         .cert_pem = (const char *)mqtt_ca,      // TODO Change it
