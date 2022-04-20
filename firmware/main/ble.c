@@ -926,7 +926,7 @@ static void received_handle(uint8_t* data, uint8_t len)
         }
 
         ESP_LOGI(GATTS_TAG, "Device token 3: %s", pack.datas);
-        if (UCFG_write_device_token(3, pack.datas))
+        if (UCFG_write_device_token(2, pack.datas))
         {
             for (size_t i = 0; i < pack.len; i++)
             {
