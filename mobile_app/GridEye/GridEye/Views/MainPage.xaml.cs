@@ -5,11 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
-using Xamarin.Essentials;
-using Java.IO;
-using System.IO;
 
-namespace GridEye.Views
+namespace WT32EHT01.Views
 {
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class MainPage : ContentPage
@@ -51,13 +48,13 @@ namespace GridEye.Views
                 case Protocol.Command.BLE_CMD_NONE:
                     break;
                 case Protocol.Command.BLE_CMD_ACK:
-                    if(onWriteConfigure)
+                    if (onWriteConfigure)
                     {
                         waitCmd = Protocol.Command.BLE_CMD_ACK;
                     }
                     break;
                 case Protocol.Command.BLE_CMD_NACK:
-                    if(onWriteConfigure)
+                    if (onWriteConfigure)
                     {
                         waitCmd = Protocol.Command.BLE_CMD_NACK;
                     }
@@ -92,9 +89,9 @@ namespace GridEye.Views
                 case Protocol.Command.BLE_CMD_PROBE_TEMP:
                     {
                         Protocol.Data.Temperature temp = new Protocol.Data.Temperature();
-                        if(temp.Parse(packet.Data, packet.Length))
+                        if (temp.Parse(packet.Data, packet.Length))
                         {
-                            if(tempOffsetPreview)
+                            if (tempOffsetPreview)
                             {
                                 temp.Values[0] = temp.Values[0] + tempOffsetVal;
                                 temp.Values[1] = temp.Values[1] + tempOffsetVal;
@@ -177,7 +174,7 @@ namespace GridEye.Views
         private void radio_wifi_CheckedChanged(object sender, CheckedChangedEventArgs e)
         {
             RadioButton rbtn = sender as RadioButton;
-            if(rbtn == radio_wifi && rbtn.IsChecked)
+            if (rbtn == radio_wifi && rbtn.IsChecked)
             {
                 conneciton = CONNECTION_WIFI;
                 Debug.WriteLine("Set conection: WIFI");
@@ -192,9 +189,9 @@ namespace GridEye.Views
         private void btnWriteConfig_Clicked(object sender, EventArgs e)
         {
             //! check connection
-            if(conneciton == 1)
+            if (conneciton == 1)
             {
-                if(string.IsNullOrEmpty(vmMainPage.WifiSsid) || string.IsNullOrEmpty(vmMainPage.WifiPassword))
+                if (string.IsNullOrEmpty(vmMainPage.WifiSsid) || string.IsNullOrEmpty(vmMainPage.WifiPassword))
                 {
                     showItoast("WIFI configure invalid");
                     return;
@@ -221,7 +218,7 @@ namespace GridEye.Views
 
             try
             {
-                
+
                 tempOffset[0] = float.Parse(vmMainPage.NtcTempOffset1);
                 tempOffset[1] = float.Parse(vmMainPage.NtcTempOffset2);
                 tempOffset[2] = float.Parse(vmMainPage.NtcTempOffset3);
@@ -236,8 +233,8 @@ namespace GridEye.Views
             }
 
             for (int i = 0; i < tempOffset.Length; i++)
-            { 
-                if(tempOffset[i] < -5 || tempOffset[i] > 5)
+            {
+                if (tempOffset[i] < -5 || tempOffset[i] > 5)
                 {
                     showItoast("Temperature offset invalid");
                     return;
@@ -245,7 +242,7 @@ namespace GridEye.Views
             }
 
             // Device token
-            if(vmMainPage.DeviceEnable1  && vmMainPage.DeviceToken1.Length < 10)
+            if (vmMainPage.DeviceEnable1 && vmMainPage.DeviceToken1.Length < 10)
             {
                 showItoast("Device token invalid");
                 return;
@@ -413,7 +410,7 @@ namespace GridEye.Views
         private bool sendConfig(Protocol.Command cmd, byte[] data, int len)
         {
             onWriteConfigure = true;
-            if(App.BleProtocol.Send(cmd, data, len) == false)
+            if (App.BleProtocol.Send(cmd, data, len) == false)
             {
                 showItoastSafe("BLE send error");
                 vmMainPage.ShowProcess = false;
@@ -424,16 +421,16 @@ namespace GridEye.Views
             waitCmd = Protocol.Command.BLE_CMD_NONE;
 
             int time_out = 0;
-            while(true)
+            while (true)
             {
-                if(waitCmd != Protocol.Command.BLE_CMD_NONE)
+                if (waitCmd != Protocol.Command.BLE_CMD_NONE)
                 {
                     break;
                 }
                 Thread.Sleep(10);
                 time_out += 10;
 
-                if(time_out >= 1000)
+                if (time_out >= 1000)
                 {
                     Debug.WriteLine("Config write timeout");
                     vmMainPage.ShowProcess = false;
@@ -458,7 +455,7 @@ namespace GridEye.Views
         {
             Debug.WriteLine($"Toast message: {msg}");
             var toast = DependencyService.Get<Services.IToast>();
-            if(toast != null)
+            if (toast != null)
             {
                 toast.Show(msg);
             }

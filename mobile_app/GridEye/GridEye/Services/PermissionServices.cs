@@ -2,7 +2,7 @@
 using Xamarin.Essentials;
 using Xamarin.Forms;
 
-namespace GridEye.Services
+namespace WT32EHT01.Services
 {
     public class PermissionServices
     {

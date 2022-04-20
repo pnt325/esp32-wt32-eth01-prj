@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Xamarin.CommunityToolkit.Extensions;
 
-namespace GridEye.Views
+namespace WT32EHT01.Views
 {
     class BackToInit
     {

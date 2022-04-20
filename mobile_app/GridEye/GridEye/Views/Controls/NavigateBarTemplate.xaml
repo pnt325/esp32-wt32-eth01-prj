@@ -2,7 +2,7 @@
 <ContentView xmlns="http://xamarin.com/schemas/2014/forms" 
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Name="this"
-             x:Class="GridEye.Views.Controls.NavigateBarTemplate">
+             x:Class="WT32EHT01.Views.Controls.NavigateBarTemplate">
     <ContentView.Content>
         <Grid MinimumHeightRequest="80" HorizontalOptions="Fill"
               BindingContext="{x:Reference this}">

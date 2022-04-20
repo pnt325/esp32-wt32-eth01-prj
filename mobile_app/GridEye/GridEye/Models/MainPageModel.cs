@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GridEye.Models
+namespace WT32EHT01.Models
 {
     public class MainPageModel
     {

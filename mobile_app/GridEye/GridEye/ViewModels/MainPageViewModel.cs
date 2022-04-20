@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using GridEye.Protocol;
+using WT32EHT01.Protocol;
 using System.Diagnostics;
 
-namespace GridEye.ViewModels
+namespace WT32EHT01.ViewModels
 {
     public class MainPageViewModel :ViewModelBase
     {

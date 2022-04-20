@@ -1,7 +1,7 @@
 ﻿using Xamarin.Essentials;
 using Xamarin.Forms;
 
-namespace GridEye.Views.Main
+namespace WT32EHT01.Views.Main
 {
 	static class PopupSize
 	{

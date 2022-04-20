@@ -1,21 +1,13 @@
-﻿using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
+﻿using Android.Content;
 using Android.Views;
-using Android.Widget;
-using GridEye.Droid.Controls;
-using GridEye.Views.Controls;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
+using WT32EHT01.Droid.Controls;
+using WT32EHT01.Views.Controls;
 using Xamarin.Forms;
 using Xamarin.Forms.Platform.Android;
 
 [assembly: ExportRenderer(typeof(TextAlignmentButton), typeof(TextAlignmentButtonRenderer))]
-namespace GridEye.Droid.Controls
+namespace WT32EHT01.Droid.Controls
 {
     public class TextAlignmentButtonRenderer : ButtonRenderer
     {

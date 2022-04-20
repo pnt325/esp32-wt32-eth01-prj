@@ -1,9 +1,8 @@
 ﻿using System;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
-using Xamarin.CommunityToolkit.Extensions;
 
-namespace GridEye.Views
+namespace WT32EHT01.Views
 {
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class InitPage : ContentPage

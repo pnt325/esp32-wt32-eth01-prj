@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GridEye.Services
+namespace WT32EHT01.Services
 {
     public interface IBLEPermission
     {

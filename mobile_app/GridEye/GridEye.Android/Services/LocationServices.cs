@@ -1,18 +1,10 @@
 ﻿using Android.App;
 using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
-using GridEye.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Android.Locations;
+using WT32EHT01.Services;
 
-[assembly:Xamarin.Forms.Dependency(typeof(GridEye.Droid.Services.LocationServices))]
-namespace GridEye.Droid.Services
+[assembly: Xamarin.Forms.Dependency(typeof(WT32EHT01.Droid.Services.LocationServices))]
+namespace WT32EHT01.Droid.Services
 {
     public class LocationServices : ILocationServices
     {

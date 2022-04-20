@@ -7,7 +7,7 @@ using Xamarin.CommunityToolkit.UI.Views;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
-namespace GridEye.Views.Controls
+namespace WT32EHT01.Views.Controls
 {
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class LoadOverlay : Popup

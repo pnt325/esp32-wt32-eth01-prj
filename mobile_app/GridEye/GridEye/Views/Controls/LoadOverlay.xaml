@@ -2,7 +2,7 @@
 <xct:Popup  xmlns="http://xamarin.com/schemas/2014/forms" 
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:xct="clr-namespace:Xamarin.CommunityToolkit.UI.Views;assembly=Xamarin.CommunityToolkit"
-             x:Class="GridEye.Views.Controls.LoadOverlay"
+             x:Class="WT32EHT01.Views.Controls.LoadOverlay"
             Color="Transparent">
     <AbsoluteLayout VerticalOptions="Center" HorizontalOptions="Center">
         <ActivityIndicator Color="{StaticResource colorFriwoBackground}"

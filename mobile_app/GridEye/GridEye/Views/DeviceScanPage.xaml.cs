@@ -3,7 +3,7 @@ using System.Threading;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
-namespace GridEye.Views
+namespace WT32EHT01.Views
 {
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class DeviceScanPage : ContentPage

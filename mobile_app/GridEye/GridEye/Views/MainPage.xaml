@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" xmlns:microcharts="clr-namespace:Microcharts.Forms;assembly=Microcharts.Forms"
-             xmlns:controls="clr-namespace:GridEye.Views.Controls"
-             x:Class="GridEye.Views.MainPage"
-             xmlns:vm="clr-namespace:GridEye.ViewModels"
+             xmlns:controls="clr-namespace:WT32EHT01.Views.Controls"
+             x:Class="WT32EHT01.Views.MainPage"
+             xmlns:vm="clr-namespace:WT32EHT01.ViewModels"
              NavigationPage.HasNavigationBar="false">
 
     <ContentPage.BindingContext>

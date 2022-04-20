@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GridEye.Services
+namespace WT32EHT01.Services
 {
     public interface IBluetoothGatt
     {

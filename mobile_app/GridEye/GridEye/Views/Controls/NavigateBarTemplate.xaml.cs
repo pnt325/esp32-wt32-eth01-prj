@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
-namespace GridEye.Views.Controls
+namespace WT32EHT01.Views.Controls
 {
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class NavigateBarTemplate : ContentView

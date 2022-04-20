@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace GridEye
+﻿namespace WT32EHT01
 {
     public interface IOpenSettingInterface
     {

@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:controls="clr-namespace:GridEye.Views.Controls"
-             x:Class="GridEye.Views.InitPage"
+             xmlns:controls="clr-namespace:WT32EHT01.Views.Controls"
+             x:Class="WT32EHT01.Views.InitPage"
              NavigationPage.HasNavigationBar="False">
     <ContentPage.Resources>
         <ResourceDictionary>

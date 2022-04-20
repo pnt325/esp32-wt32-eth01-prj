@@ -5,7 +5,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace GridEye.ViewModels
+namespace WT32EHT01.ViewModels
 {
     public class DeviceScanViewModel : INotifyPropertyChanged
     {

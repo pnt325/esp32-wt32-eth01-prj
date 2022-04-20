@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GridEye.Protocol
+namespace WT32EHT01.Protocol
 {
     public class Packet
     {

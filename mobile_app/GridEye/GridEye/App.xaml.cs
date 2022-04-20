@@ -1,9 +1,9 @@
-﻿using GridEye.Services;
+﻿using WT32EHT01.Services;
 using System;
 using System.ComponentModel;
 using Xamarin.Forms;
 
-namespace GridEye
+namespace WT32EHT01
 {
 
     public enum Options

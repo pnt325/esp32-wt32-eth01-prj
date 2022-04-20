@@ -3,11 +3,9 @@ using Android.Content.PM;
 using Android.OS;
 using Android.Runtime;
 
-
-
-namespace GridEye.Droid
+namespace WT32EHT01.Droid
 {
-    [Activity(Label = "WT32", ScreenOrientation=ScreenOrientation.Portrait, Icon = "@mipmap/icon", Theme = "@style/MainTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize)]
+    [Activity(Label = "WT32", ScreenOrientation = ScreenOrientation.Portrait, Icon = "@mipmap/icon", Theme = "@style/MainTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize)]
     public class MainActivity : global::Xamarin.Forms.Platform.Android.FormsAppCompatActivity
     {
         protected override async void OnCreate(Bundle savedInstanceState)
@@ -17,9 +15,9 @@ namespace GridEye.Droid
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
             global::ZXing.Net.Mobile.Forms.Android.Platform.Init();
-            
+
             var ret = await Xamarin.Essentials.Permissions.RequestAsync<BLEPermission>();
-            if(ret != Xamarin.Essentials.PermissionStatus.Granted)
+            if (ret != Xamarin.Essentials.PermissionStatus.Granted)
             {
                 return;
             }

@@ -7,7 +7,7 @@ using Xamarin.CommunityToolkit.UI.Views;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
-namespace GridEye.Views.Main
+namespace WT32EHT01.Views.Main
 {
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class ExitPopup : Popup

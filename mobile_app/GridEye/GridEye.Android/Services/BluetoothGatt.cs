@@ -1,16 +1,16 @@
 ﻿using Android.App;
 using Android.Bluetooth;
-using Android.Runtime;
 using Android.Content;
-using GridEye.Services;
+using Android.Runtime;
 using Java.Util;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using WT32EHT01.Services;
 
-[assembly: Xamarin.Forms.Dependency(typeof(GridEye.Droid.Services.BluetoothGatt))]
-namespace GridEye.Droid.Services
+[assembly: Xamarin.Forms.Dependency(typeof(WT32EHT01.Droid.Services.BluetoothGatt))]
+namespace WT32EHT01.Droid.Services
 {
     public delegate void BleGattReceivedEventHandler(byte[] datas);
     public class BluetoothGatt : Android.Bluetooth.BluetoothGattCallback, IBluetoothGatt
@@ -131,7 +131,7 @@ namespace GridEye.Droid.Services
 
             characteristic = null;
             gatt.Close();
-            if(connected)
+            if (connected)
             {
                 Disconnected?.Invoke(this, null);
             }
@@ -180,7 +180,7 @@ namespace GridEye.Droid.Services
             bool ret = false;
             //if (gatt.GetConnectionState(this.device) != ProfileState.Connected)
             int retry = 0;
-            while(retry > 0)
+            while (retry > 0)
             {
                 if (connected)
                 {
@@ -188,7 +188,7 @@ namespace GridEye.Droid.Services
                     characteristic.WriteType = GattWriteType.Default;
                     ret = gatt.WriteCharacteristic(characteristic);
 
-                    if(ret == false)
+                    if (ret == false)
                     {
                         Debug.WriteLine("BLE: Send retry");
                         retry--;
@@ -199,7 +199,7 @@ namespace GridEye.Droid.Services
                     break;
                 }
             }
-            if(connected)
+            if (connected)
             {
                 characteristic.SetValue(datas);
                 characteristic.WriteType = GattWriteType.Default;

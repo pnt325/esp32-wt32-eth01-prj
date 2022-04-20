@@ -1,25 +1,15 @@
-﻿using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-[assembly: Xamarin.Forms.Dependency(typeof(GridEye.Droid.Services.BLEPer))]
-namespace GridEye.Droid.Services
+[assembly: Xamarin.Forms.Dependency(typeof(WT32EHT01.Droid.Services.BLEPer))]
+namespace WT32EHT01.Droid.Services
 {
-    public class BLEPremission : GridEye.Services.IBLEPermission
+    public class BLEPremission : WT32EHT01.Services.IBLEPermission
     {
         bool result = false;
         public async void Request()
         {
             var ret = await Xamarin.Essentials.Permissions.RequestAsync<BLEPer>();
-            if(ret == Xamarin.Essentials.PermissionStatus.Granted)
+            if (ret == Xamarin.Essentials.PermissionStatus.Granted)
             {
                 result = true;
             }

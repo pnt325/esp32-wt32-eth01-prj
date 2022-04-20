@@ -1,4 +1,4 @@
-﻿namespace GridEye.Protocol
+﻿namespace WT32EHT01.Protocol
 {
     class Checksum
     {

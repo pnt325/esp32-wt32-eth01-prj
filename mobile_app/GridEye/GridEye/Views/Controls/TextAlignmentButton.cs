@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Xamarin.Forms;
 
-namespace GridEye.Views.Controls
+namespace WT32EHT01.Views.Controls
 {
     public class TextAlignmentButton : Button
     {

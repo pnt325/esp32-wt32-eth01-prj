@@ -1,18 +1,10 @@
 ﻿using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
 using Android.Widget;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
-[assembly:Xamarin.Forms.Dependency(typeof(GridEye.Droid.Services.Toast))]
-namespace GridEye.Droid.Services
+[assembly: Xamarin.Forms.Dependency(typeof(WT32EHT01.Droid.Services.Toast))]
+namespace WT32EHT01.Droid.Services
 {
-    public class Toast : GridEye.Services.IToast
+    public class Toast : WT32EHT01.Services.IToast
     {
         public void Show(string msg)
         {

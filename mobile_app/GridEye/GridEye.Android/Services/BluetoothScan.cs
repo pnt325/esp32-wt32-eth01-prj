@@ -2,15 +2,15 @@
 using Android.Bluetooth.LE;
 using Android.Content;
 using Android.Runtime;
-using GridEye.Services;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using WT32EHT01.Services;
 
-[assembly: Xamarin.Forms.Dependency(typeof(GridEye.Droid.Services.BluetoothScan))]
-namespace GridEye.Droid.Services
+[assembly: Xamarin.Forms.Dependency(typeof(WT32EHT01.Droid.Services.BluetoothScan))]
+namespace WT32EHT01.Droid.Services
 {
-    public class BluetoothScan : ScanCallback, GridEye.Services.IBluetoothScan
+    public class BluetoothScan : ScanCallback, WT32EHT01.Services.IBluetoothScan
     {
         bool scanning = false;
         BluetoothLeScanner leScaner;

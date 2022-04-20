@@ -1,18 +1,12 @@
 ﻿using Android.App;
 using Android.Bluetooth;
-using Android.Bluetooth.LE;
 using Android.Content;
-using Android.Runtime;
-using GridEye.Droid.Services;
-using GridEye.Services;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+using WT32EHT01.Droid.Services;
 
 [assembly: Xamarin.Forms.Dependency(typeof(BluetoothServices))]
-namespace GridEye.Droid.Services
+namespace WT32EHT01.Droid.Services
 {
-    public class BluetoothServices : GridEye.Services.IBluetoothServices
+    public class BluetoothServices : WT32EHT01.Services.IBluetoothServices
     {
         public bool Enabled()
         {

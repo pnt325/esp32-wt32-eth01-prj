@@ -118,9 +118,9 @@
     <AndroidResource Include="Resources\drawable\add_connect_icon.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\GridEye\GridEye.csproj">
-      <Project>{8A00AC5E-8FEA-4FE3-8A2D-4C5CA742E5BD}</Project>
-      <Name>GridEye</Name>
+    <ProjectReference Include="..\GridEye\WT32EHT01.csproj">
+      <Project>{B546E832-1CCD-479A-8890-076177C096C1}</Project>
+      <Name>WT32EHT01</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

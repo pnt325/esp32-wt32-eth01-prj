@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GridEye.ViewModels
+namespace WT32EHT01.ViewModels
 {
     class InitPageViewModel
     {

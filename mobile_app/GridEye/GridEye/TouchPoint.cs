@@ -1,8 +1,8 @@
-﻿using System;
-using SkiaSharp;
+﻿using SkiaSharp;
+using System;
 using TouchTracking;
 
-namespace GridEye.Bitmaps
+namespace WT32EHT01.Bitmaps
 {
     public class TouchPoint
     {

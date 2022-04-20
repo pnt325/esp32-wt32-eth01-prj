@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace GridEye.Models
+namespace WT32EHT01.Models
 {
     public class DeviceScanModel : INotifyPropertyChanged
     {
